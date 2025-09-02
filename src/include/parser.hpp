@@ -1,0 +1,64 @@
+#include <iostream>
+#include <string>
+#include "lexer.hpp"
+#include <vector>
+#include "err.hpp"
+using namespace std;
+// the fucking parser
+class parser {
+    private:
+        vector<tok> input;
+        int ipos=0;
+        tok ct;
+    public:
+        parser(string in){
+            lexer l=lexer();
+            this.input = l.tokenize();
+            ct = input[ipos];
+        }
+        void adv(){
+            ipos++;
+            ct = input.at(ipos);
+        }
+        tok next(){
+            return input[++ipos];
+        }
+        bool consume(token_type excepted_token, string exceptedchar){
+            if (tok.type == excepted_token && tok.value == exceptedchar){
+                return true;
+            } else {
+                new ParseError(ct);
+            }
+            return false
+        }
+        bool consume(token_type excepted_token){
+            if (tok.type == excepted_token){
+                return true;
+            } else {
+                new ParseError(ct);
+            }
+            return false
+        }
+
+}
+
+
+/*
+syntax that will be:
+
+
+
+
+
+loadlib "siol";
+loadlib "os";
+func int art(os.argc, os.argv){
+    output("Hello, World!");
+    return 0;
+}
+// comment
+//* multi line 
+    comment \\*
+
+// func int art() is function that returns a data type of int at runtime with 
+*/

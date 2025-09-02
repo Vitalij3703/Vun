@@ -9,7 +9,7 @@ class ast {
             string id;
             auto val;
         };
-        struct var{
+        struct node{
             
         };
         

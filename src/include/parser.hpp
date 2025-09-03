@@ -8,7 +8,7 @@ using namespace std;
 class parser {
     private:
         vector<tok> input;
-        int ipos=0;
+        size_t ipos=0;
         tok ct;
     public:
         parser(string in){
@@ -22,6 +22,18 @@ class parser {
         }
         tok next(){
             return input[++ipos];
+        }
+        bool match(token_type excepted_token, string excepted_char){
+            if (tok.type == excepted_token && tok.value == excepted_char){
+                return true;
+            }
+            return false;
+        }
+        bool match(token_type excepted_token){
+            if (tok.type == excepted_token){
+                return true;
+            }
+            return false;
         }
         bool consume(token_type excepted_token, string exceptedchar){
             if (tok.type == excepted_token && tok.value == exceptedchar){
@@ -52,7 +64,7 @@ syntax that will be:
 
 loadlib "siol";
 loadlib "os";
-func int art(os.argc, os.argv){
+func int art(os.argc, os.argv[]){
     output("Hello, World!");
     return 0;
 }

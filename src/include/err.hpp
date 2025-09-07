@@ -3,7 +3,12 @@
 using namespace std;
 
 class ParseError {
-    ParseError(posit pos){
-        cerr << "ParseError at pos " << "{"<<"line "<<pos.line<<" collum "<<pos.col<<"}" <<endl;
+    ParseError(int pos){
+        cerr << "ParseError at pos " << pos <<endl;
+    }
+};
+class RuntimeError {
+    RuntimeError(int pos){
+        cerr << "RuntimeError at pos " << pos <<endl;
     }
 };

@@ -3,7 +3,7 @@
 #include <vector>
 #include <variant>
 #include <utility>
-
+#include "err.hpp"
 
 struct posit {
     int line = 0;

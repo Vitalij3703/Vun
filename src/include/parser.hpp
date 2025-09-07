@@ -39,7 +39,7 @@ class parser {
             if (tok.type == excepted_token && tok.value == exceptedchar){
                 return true;
             } else {
-                new ParseError(ct);
+                new ParseError(ipos);
             }
             return false
         }
@@ -47,7 +47,7 @@ class parser {
             if (tok.type == excepted_token){
                 return true;
             } else {
-                new ParseError(ct);
+                new ParseError(ipos);
             }
             return false
         }
@@ -64,7 +64,7 @@ syntax that will be:
 
 loadlib "siol";
 loadlib "os";
-func int art(os.argc, os.argv[]){
+func int art(int os.argc, str os.argv[]){
     output("Hello, World!");
     return 0;
 }

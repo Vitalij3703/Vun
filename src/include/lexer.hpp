@@ -9,7 +9,7 @@ enum token_type {
     IDEF, LPAREN, RPAREN, LBRACE, RBRACE, KEYW,
     STR, INT, DOT,
     EQUL, IS, DIV, MUL, MIN, PLU,
-    SEMI // copy pasted from the java ver cuz why not
+    SEMI, FE
 };
 struct tok {
     enum token_type type;
@@ -233,31 +233,8 @@ class lexer {
                 }
                 adv();
             }
-            
+            tokens.push_back(token(token_type::FE, "\0"));
             return tokens;
         }
 
 };
-// debug:
-//  lexer: g++ src/lexer.hpp -o build/lexerV0_1.dll -std=c++23
-//  l. test:  g++ src/lt.cpp -o build/lexertest.exe -L build/ -std=c++23
- 
-/*
-syntax that will be:
-
-
-
-
-
-loadlib "siol";
-loadlib "os";
-func int art(os.argc, os.argv){
-    output("Hello, World!");
-    return 0;
-}
-// comment
-//* multi line 
-    comment \\*
-
-// func int art() is function that returns a data type of int at runtime with 
-*/

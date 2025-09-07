@@ -1,8 +1,11 @@
 #include <iostream>
 #include "lexer.hpp"
 using namespace std;
+struct posit{
+    int line; int col;
+};
 class ParseError {
-    ParseError(tok token){
-        cerr << "ParseError at token " << "{"<<token.type<<" : "<<token.value<<"}" <<endl;
+    ParseError(posit pos){
+        cerr << "ParseError at pos " << "{"<<"line "<<pos.line<<" collum "<<pos.col<<"}" <<endl;
     }
 };

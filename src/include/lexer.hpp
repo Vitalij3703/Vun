@@ -1,5 +1,6 @@
 // vun lexar
 // yes im too lazy to remove the "temp" parts
+#pragma once
 #include <iostream>
 #include <vector>
 #include <string>
@@ -7,7 +8,7 @@
 using namespace std;
 enum token_type {
     IDEF, LPAREN, RPAREN, LBRACE, RBRACE, KEYW,
-    STR, INT, DOT,
+    STR, INT, DOT, COMMA,
     EQUL, IS, DIV, MUL, MIN, PLU,
     SEMI, FE
 };
@@ -99,6 +100,7 @@ class lexer {
         char cchar;
     public:
         tok token(token_type type, string value){
+            // this function is the result of a human x horse (lazy developer x deleted class).
             return {type, value};
         }
         lexer(string input){
@@ -227,6 +229,11 @@ class lexer {
                     tokens.push_back(token(plus, "+"));
                     
                 }
+                else if (cchar == ',')
+                {
+                    tokens.push_back(token(token_type::COMMA, ","));
+                }
+                
                 else if(cchar == ';'){
                     tokens.push_back(token(semicolon, ";"));
                     

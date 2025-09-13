@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <string>
 #include "lexer.hpp"
@@ -24,19 +25,19 @@ class parser {
             return input[++ipos];
         }
         bool match(token_type excepted_token, string excepted_char){
-            if (tok.type == excepted_token && tok.value == excepted_char){
+            if (ct.type == excepted_token && ct.value == excepted_char){
                 return true;
             }
             return false;
         }
         bool match(token_type excepted_token){
-            if (tok.type == excepted_token){
+            if (ct.type == excepted_token){
                 return true;
             }
             return false;
         }
         bool consume(token_type excepted_token, string exceptedchar){
-            if (tok.type == excepted_token && tok.value == exceptedchar){
+            if (ct.type == excepted_token && ct.value == exceptedchar){
                 return true;
             } else {
                 new ParseError(ipos);
@@ -44,12 +45,67 @@ class parser {
             return false
         }
         bool consume(token_type excepted_token){
-            if (tok.type == excepted_token){
+            if (ct.type == excepted_token){
                 return true;
             } else {
                 new ParseError(ipos);
             }
             return false
+        }
+        // YES im vitalij, YES im making this off pseudo code
+        ast::n parse_stat(){
+            if (match(token_type::KEYW, "int") || match(token_type::KEYW, "str")){
+                adv();
+                if (match(token_type::IDEF)){
+                    string name = ct.value;
+                    adv();
+                    if (match(token_type::EQUL)){
+                        ast::n expr = parse_expr();
+                        return ast::var(name, expr);
+                    }
+                }
+            }
+            return parse_expr();
+        }
+        ast::n parse_expr(){
+            ast::n node = parse_term();
+            while ((match(token_type::PLU)) || (match(token_type::MIN)))
+            {
+                tok op = ct;
+                match(op.type);
+                ast::n right = parse_term();
+                node = ast::ben(node, op.value, right);
+            }
+            return node;
+            
+        }
+
+        ast::n parse_term(){
+            ast::n node = parse_fact();
+            while ((ct == token_type::MUL) || (ct == token_type::DIV))
+            {
+                tok op = ct;
+                match(op.type);
+                ast::n right = parse_fact();
+                node = ast::ben(node, op.value, right);
+            }
+            return node;
+        }
+        ast::n parse_fact(){
+            if (ct.type == token_type::INT){
+                int value = stoi(ct.value);
+                match(token_type::INT);
+                return ast::lit(value);
+            }
+            else if (ct.type == token_type::LPAREN){
+                match(token_type::LPAREN);
+                ast::n node = parse_expr();
+                match(token_type::RPAREN);
+                return node;
+            }
+            else {
+                new ParseError(ct);
+            }
         }
 
 

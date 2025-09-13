@@ -4,19 +4,19 @@
 #include <variant>
 #include <utility>
 #include "err.hpp"
-
+// ts looks like big boy code
 struct posit {
     int line = 0;
     int col  = 0;
 };
 
-
+namespace ast {
 class n {
 public:
-    std::string   type;
-    std::vector<n>children;
-    std::string   value;   
-    posit         pos;
+    std::string    type;
+    std::vector<n> children;
+    std::string    value;   
+    posit          pos;
 
     n(std::string type,
       std::vector<n> children = {},
@@ -110,3 +110,4 @@ public:
     : n("var", std::vector<n>{ std::move(valueExpr) }, std::move(name), p)
     {}
 };
+}

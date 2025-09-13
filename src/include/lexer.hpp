@@ -68,6 +68,10 @@ string tt_to_string(token_type type){
     case token_type::SEMI:
         return "SEMI";
         break;
+    
+    case token_type::COMMA:
+        return "COMMA";
+        break;
     }
 }
 string rtv(tok toke){

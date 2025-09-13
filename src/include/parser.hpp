@@ -13,8 +13,8 @@ class parser {
         tok ct;
     public:
         parser(string in){
-            lexer l=lexer();
-            this.input = l.tokenize();
+            lexer l=lexer(in);
+            this->input = l.tokenize();
             ct = input[ipos];
         }
         void adv(){
@@ -40,17 +40,17 @@ class parser {
             if (ct.type == excepted_token && ct.value == exceptedchar){
                 return true;
             } else {
-                new ParseError(ipos);
+                new ParseError(ct);
             }
-            return false
+            return false;
         }
         bool consume(token_type excepted_token){
             if (ct.type == excepted_token){
                 return true;
             } else {
-                new ParseError(ipos);
+                new ParseError(ct);
             }
-            return false
+            return false;
         }
         // YES im vitalij, YES im making this off pseudo code
         ast::n parse_stat(){
@@ -74,7 +74,7 @@ class parser {
                 tok op = ct;
                 match(op.type);
                 ast::n right = parse_term();
-                node = ast::ben(node, op.value, right);
+                node = ast::ben(node, op.value[0], right);
             }
             return node;
             
@@ -82,12 +82,12 @@ class parser {
 
         ast::n parse_term(){
             ast::n node = parse_fact();
-            while ((ct == token_type::MUL) || (ct == token_type::DIV))
+            while (match(token_type::MUL) || match(token_type::DIV))
             {
                 tok op = ct;
                 match(op.type);
                 ast::n right = parse_fact();
-                node = ast::ben(node, op.value, right);
+                node = ast::ben(node, op.value[0], right);
             }
             return node;
         }
@@ -109,7 +109,7 @@ class parser {
         }
 
 
-}
+};
 
 
 /*

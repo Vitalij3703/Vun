@@ -14,7 +14,7 @@ struct posit {
 class n {
 public:
     std::string   type;
-    std::vector<n> children;
+    std::vector<n>children;
     std::string   value;   
     posit         pos;
 

@@ -52,6 +52,7 @@ class parser {
             return false
         }
 
+
 }
 
 
@@ -72,5 +73,5 @@ func int art(int os.argc, str os.argv[]){
 //* multi line 
     comment \\*
 
-// func int art() is function that returns a data type of int at runtime with 
+// func int art() is function that returns a data type of int at runtime with bla bla bla
 */

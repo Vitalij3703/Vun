@@ -53,6 +53,7 @@ class parser {
             return false;
         }
         // YES im vitalij, YES im making this off pseudo code
+        // this probably will have logic issues
         ast::n parse_stat(){
             if (match(token_type::KEYW, "int") || match(token_type::KEYW, "str")){
                 adv();

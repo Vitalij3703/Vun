@@ -4,112 +4,122 @@
 #include "lexer.hpp"
 #include <vector>
 #include "err.hpp"
+#include <memory>
 using namespace std;
-// the fucking parser
+
 class parser {
-    private:
-        vector<tok> input;
-        size_t ipos=0;
-        tok ct;
-    public:
-        parser(string in){
-            lexer l=lexer(in);
-            this->input = l.tokenize();
-            ct = input[ipos];
-        }
-        void adv(){
-            ipos++;
-            ct = input.at(ipos);
-        }
-        tok next(){
-            return input[++ipos];
-        }
-        bool match(token_type excepted_token, string excepted_char){
-            if (ct.type == excepted_token && ct.value == excepted_char){
-                return true;
-            }
-            return false;
-        }
-        bool match(token_type excepted_token){
-            if (ct.type == excepted_token){
-                return true;
-            }
-            return false;
-        }
-        bool consume(token_type excepted_token, string exceptedchar){
-            if (ct.type == excepted_token && ct.value == exceptedchar){
-                return true;
-            } else {
-                new ParseError(ct);
-            }
-            return false;
-        }
-        bool consume(token_type excepted_token){
-            if (ct.type == excepted_token){
-                return true;
-            } else {
-                new ParseError(ct);
-            }
-            return false;
-        }
-        // YES im vitalij, YES im making this off pseudo code
-        // this probably will have logic issues
-        ast::n parse_stat(){
-            if (match(token_type::KEYW, "int") || match(token_type::KEYW, "str")){
+private:
+    vector<tok> input;
+    size_t ipos = 0;
+    tok ct;
+
+public:
+    parser(string in) {
+        lexer l = lexer(in);
+        this->input = l.tokenize();
+        ct = input[ipos];
+    }
+
+    void adv() {
+        ipos++;
+        ct = input.at(ipos);
+    }
+
+    tok next() {
+        return input[++ipos];
+    }
+
+    bool match(token_type expected_token, string expected_char) {
+        return ct.type == expected_token && ct.value == expected_char;
+    }
+
+    bool match(token_type expected_token) {
+        return ct.type == expected_token;
+    }
+
+    bool consume(token_type expected_token, string expected_char) {
+        if (match(expected_token, expected_char)) return true;
+        throw ParseError(ct);
+    }
+
+    bool consume(token_type expected_token) {
+        if (match(expected_token)) return true;
+        throw ParseError(ct);
+    }
+
+    // "Hello world"(print)
+    unique_ptr<ast::n> parse_stat() {
+        if (match(token_type::KEYW, "int") || match(token_type::KEYW, "str")) {
+            adv();
+            if (match(token_type::IDEF)) {
+                string name = ct.value;
                 adv();
-                if (match(token_type::IDEF)){
-                    string name = ct.value;
+                if (match(token_type::EQUL)) {
                     adv();
-                    if (match(token_type::EQUL)){
-                        ast::n expr = parse_expr();
-                        return ast::var(name, expr);
-                    }
+                    auto expr = parse_expr();
+                    return make_unique<ast::var>(name, std::move(expr));
                 }
+                return make_unique<ast::var>(name, unique_ptr<ast::n>(nullptr)); 
             }
-            return parse_expr();
         }
-        ast::n parse_expr(){
-            ast::n node = parse_term();
-            while ((match(token_type::PLU)) || (match(token_type::MIN)))
-            {
-                tok op = ct;
-                match(op.type);
-                ast::n right = parse_term();
-                node = ast::ben(node, op.value[0], right);
-            }
+        return parse_expr();
+    }
+
+    unique_ptr<ast::n> parse_call() {
+        consume(token_type::IDEF);
+        string func_name = ct.value;
+        adv();
+        consume(token_type::LPAREN);
+        adv();
+        vector<unique_ptr<ast::n>> args;
+        if (!match(token_type::RPAREN)) {
+            do {
+                args.push_back(move(parse_expr()));
+                if (match(token_type::COMMA)) adv();
+                else break;
+            } while (true);
+        }
+        consume(token_type::RPAREN);
+        return make_unique<ast::call>(func_name, std::move(args));
+    }
+
+    unique_ptr<ast::n> parse_expr() {
+        auto node = parse_term();
+        while (match(token_type::PLU) || match(token_type::MIN)) {
+            tok op = ct;
+            adv();
+            auto right = parse_term();
+            node = make_unique<ast::ben>(std::move(node), op.value[0], std::move(right));
+        }
+        return node;
+    }
+
+    unique_ptr<ast::n> parse_term() {
+        auto node = parse_fact();
+        while (match(token_type::MUL) || match(token_type::DIV)) {
+            tok op = ct;
+            adv();
+            auto right = parse_fact();
+            node = make_unique<ast::ben>(std::move(node), op.value[0], std::move(right));
+        }
+        return node;
+    }
+
+    unique_ptr<ast::n> parse_fact() {
+        if (ct.type == token_type::INT) {
+            int value = stoi(ct.value);
+            adv();
+            return make_unique<ast::lit>(value);
+        } else if (ct.type == token_type::LPAREN) {
+            adv();
+            auto node = parse_expr();
+            consume(token_type::RPAREN);
+            adv();
             return node;
-            
+        } else {
+            throw ParseError(ct);
         }
-
-        ast::n parse_term(){
-            ast::n node = parse_fact();
-            while (match(token_type::MUL) || match(token_type::DIV))
-            {
-                tok op = ct;
-                match(op.type);
-                ast::n right = parse_fact();
-                node = ast::ben(node, op.value[0], right);
-            }
-            return node;
-        }
-        ast::n parse_fact(){
-            if (ct.type == token_type::INT){
-                int value = stoi(ct.value);
-                match(token_type::INT);
-                return ast::lit(value);
-            }
-            else if (ct.type == token_type::LPAREN){
-                match(token_type::LPAREN);
-                ast::n node = parse_expr();
-                match(token_type::RPAREN);
-                return node;
-            }
-            else {
-                new ParseError(ct);
-            }
-        }
-
-
+    }
 };
 
 
@@ -122,7 +132,7 @@ syntax that will be:
 
 loadlib "siol";
 loadlib "os";
-func int art(int os.argc, str os.argv[]){
+func int _art(){
     output("Hello, World!");
     return 0;
 }

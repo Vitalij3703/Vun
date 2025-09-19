@@ -1,6 +1,7 @@
 #include "parser.hpp"
 #include <string>
 #include <iostream>
+#include <optional>
 
 class runtime {
     std::string input;

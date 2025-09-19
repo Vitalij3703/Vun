@@ -159,7 +159,7 @@ class lexer {
             }
             string tstr;
             for (int digit : result){
-                tstr+=digit;
+                tstr+=to_string(digit);
             }
             cout << "result: " << tstr;
             return stoi(tstr);
@@ -203,8 +203,8 @@ class lexer {
                     
                 }
                 else if(isdigit(cchar)){
-                    int numb = num_build();
-                    string num = numb +"";
+                    string numb = to_string(num_build());
+                    string num = numb+"";
                     tokens.push_back(token(_int, num));
                     
                 }

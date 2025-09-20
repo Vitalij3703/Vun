@@ -73,6 +73,7 @@ string tt_to_string(token_type type){
         return "COMMA";
         break;
     }
+    return "UNDEFINED";
 }
 string rtv(tok toke){
     /* helo wolrd */

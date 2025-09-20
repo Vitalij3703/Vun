@@ -1,3 +1,4 @@
+
 #pragma once
 #include <iostream>
 #include <string>
@@ -14,6 +15,7 @@ private:
     tok ct;
 
 public:
+    
     parser(string in) {
         lexer l = lexer(in);
         this->input = l.tokenize();
@@ -46,8 +48,18 @@ public:
         if (match(expected_token)) return true;
         throw ParseError(ct);
     }
-
-    // "Hello world"(print)
+    vector<unique_ptr<ast::n>> parse() {
+        vector<unique_ptr<ast::n>> nlist;
+        while (ct.type != token_type::FE){
+            unique_ptr<ast::n> node = parse_stat();
+            if (node){
+                nlist.push_back(move(node));
+            }
+            else {new ParseError(ct);}
+        }
+        return nlist;
+    }
+    // "Hello world"(print) ; 
     unique_ptr<ast::n> parse_stat() {
         if (match(token_type::KEYW, "int") || match(token_type::KEYW, "str")) {
             adv();
@@ -61,6 +73,9 @@ public:
                 }
                 return make_unique<ast::var>(name, unique_ptr<ast::n>(nullptr)); 
             }
+        }
+        else if (match(token_type::IDEF)){
+            parse_call();
         }
         return parse_expr();
     }
@@ -121,24 +136,3 @@ public:
         }
     }
 };
-
-
-/*
-syntax that will be:
-
-
-
-
-
-loadlib "siol";
-loadlib "os";
-func int _art(){
-    output("Hello, World!");
-    return 0;
-}
-// comment
-//* multi line 
-    comment \\*
-
-// func int art() is function that returns a data type of int at runtime with bla bla bla
-*/

@@ -6,6 +6,7 @@
 #include <vector>
 #include "err.hpp"
 #include <memory>
+#include "ast.hpp"
 using namespace std;
 
 class parser {

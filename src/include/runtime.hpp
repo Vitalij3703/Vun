@@ -1,14 +1,18 @@
 #include "parser.hpp"
 #include <string>
 #include <iostream>
-#include <optional>
+#include <vector>
+#include <memory>
+#include "ast.hpp"
 
 class runtime {
-    std::string input;
+
+std::vector<std::unique_ptr<ast::n>> nodes;
+
 public:
     runtime(std::string in){
-        this->input=in;
-        parser p = parser(in);
+        parser p(in);
+        nodes = p.parse();
     }
     
 };

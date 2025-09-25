@@ -1,4 +1,4 @@
-
+// ill expand the parser in the future
 #pragma once
 #include <iostream>
 #include <string>
@@ -49,18 +49,21 @@ public:
         if (match(expected_token)) return true;
         throw ParseError(ct);
     }
+    
+    
+
     vector<unique_ptr<ast::n>> parse() {
         vector<unique_ptr<ast::n>> nlist;
         while (ct.type != token_type::FE){
             unique_ptr<ast::n> node = parse_stat();
             if (node){
-                nlist.push_back(move(node));
+                nlist.push_back(std::move(node));
             }
             else {new ParseError(ct);}
         }
         return nlist;
     }
-    // "Hello world"(print) ; 
+    // parse statements
     unique_ptr<ast::n> parse_stat() {
         if (match(token_type::KEYW, "int") || match(token_type::KEYW, "str")) {
             adv();
@@ -80,7 +83,7 @@ public:
         }
         return parse_expr();
     }
-
+    // parse callables
     unique_ptr<ast::n> parse_call() {
         consume(token_type::IDEF);
         string func_name = ct.value;
@@ -90,7 +93,7 @@ public:
         vector<unique_ptr<ast::n>> args;
         if (!match(token_type::RPAREN)) {
             do {
-                args.push_back(move(parse_expr()));
+                args.push_back(std::move(parse_expr()));
                 if (match(token_type::COMMA)) adv();
                 else break;
             } while (true);
@@ -98,7 +101,7 @@ public:
         consume(token_type::RPAREN);
         return make_unique<ast::call>(func_name, std::move(args));
     }
-
+	// parse expressions
     unique_ptr<ast::n> parse_expr() {
         auto node = parse_term();
         while (match(token_type::PLU) || match(token_type::MIN)) {
@@ -109,7 +112,6 @@ public:
         }
         return node;
     }
-
     unique_ptr<ast::n> parse_term() {
         auto node = parse_fact();
         while (match(token_type::MUL) || match(token_type::DIV)) {
@@ -120,7 +122,6 @@ public:
         }
         return node;
     }
-
     unique_ptr<ast::n> parse_fact() {
         if (ct.type == token_type::INT) {
             int value = stoi(ct.value);

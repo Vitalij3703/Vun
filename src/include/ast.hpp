@@ -11,7 +11,7 @@ struct posit {
 };
 
 namespace ast {
-
+	// node
     class n {
     public:
         std::string type;
@@ -28,7 +28,7 @@ namespace ast {
           value(std::move(value)),
           pos(pos) {}
     };
-
+	// literal
     class lit : public n {
     public:
         std::variant<int, std::string, bool> literal;
@@ -42,7 +42,7 @@ namespace ast {
             else value = std::get<bool>(literal) ? "true" : "false";
         }
     };
-
+	// binary expr
     class ben : public n {
     public:
         ben(std::unique_ptr<n> left, char op, std::unique_ptr<n> right, posit p = {})
@@ -60,7 +60,7 @@ namespace ast {
             return v;
         }
     };
-
+	// function
     class fn : public n {
     public:
         std::string name;
@@ -74,7 +74,7 @@ namespace ast {
           name(std::move(name)),
           params(std::move(params)) {}
     };
-
+	// callable
     class call : public n {
     public:
         std::string fn_name;
@@ -90,7 +90,7 @@ namespace ast {
             for (auto& arg : this->args) children.push_back(std::move(arg));
         }
     };
-
+	// if
     class ifn : public n {
     public:
         std::unique_ptr<n> condition;
@@ -104,7 +104,7 @@ namespace ast {
             children.insert(children.begin(), std::move(this->condition));
         }
     };
-
+	// while
     class wn : public n {
     public:
         std::unique_ptr<n> condition;
@@ -118,7 +118,7 @@ namespace ast {
             children.insert(children.begin(), std::move(this->condition));
         }
     };
-
+	// variable
     class var : public n {
     public:
         var(std::string name, std::unique_ptr<n> valueExpr, posit p = {})

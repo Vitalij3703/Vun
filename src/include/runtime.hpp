@@ -14,5 +14,10 @@ public:
         parser p(in);
         nodes = p.parse();
     }
-    
-};
+void run(){
+    for(const auto& node : nodes){
+    	if (node->type == "var"){
+    		std::cout << "Assigned var";
+    	}
+    }
+}};

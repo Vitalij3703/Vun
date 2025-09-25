@@ -1,5 +1,5 @@
 // vun lexar
-// yes im too lazy to remove the "temp" parts
+
 #pragma once
 #include <iostream>
 #include <vector>
@@ -16,69 +16,7 @@ struct tok {
     enum token_type type;
     string value;
 };
-// debug (temp)
-string tt_to_string(token_type type){
-    switch (type)
-    {
-    case token_type::IDEF:
-        return "IDEF";
-        break;
-    case token_type::LPAREN:
-        return "LPRAREN";
-        break;
-    case token_type::RPAREN:
-        return "RPAREN";
-        break;
-    case token_type::LBRACE:
-        return "LBRACE";
-        break;
-    case token_type::RBRACE:
-        return "RBRACE";
-        break;
-    case token_type::KEYW:
-        return "KEYW";
-        break;
-    case token_type::STR:
-        return "STR";
-        break;
-    case token_type::INT:
-        return "INT";
-        break;
-    case token_type::DOT:
-        return "DOT";
-        break;
-    case token_type::EQUL:
-        return "EQUL";
-        break;
-    case token_type::IS:
-        return "IS";
-        break;
-    case token_type::DIV:
-        return "DIV";
-        break;
-    case token_type::MUL:
-        return "MUL";
-        break;
-    case token_type::MIN:
-        return "MIN";
-        break;
-    case token_type::PLU:
-        return "PLU";
-        break;
-    case token_type::SEMI:
-        return "SEMI";
-        break;
-    
-    case token_type::COMMA:
-        return "COMMA";
-        break;
-    }
-    return "UNDEFINED";
-}
-string rtv(tok toke){
-    /* helo wolrd */
-    return string("{")+tt_to_string(toke.type) +" | "+toke.value+"}";
-} // end debug
+
 
 class lexer {
     private:

@@ -6,7 +6,7 @@ using namespace std;
 class ParseError {
     public:
     ParseError(tok token){
-        cerr << "ParseError at token: "<<rtv(token)<<endl;
+        cerr << "ParseError"<<endl;
     }
 };
 class RuntimeError {

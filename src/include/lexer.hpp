@@ -20,7 +20,7 @@ struct tok {
 
 class lexer {
     private:
-        // token types (temp):
+        // token types (human x dog):
             enum token_type identefier = IDEF;
             enum token_type keyword = KEYW;
             enum token_type left_paren = LPAREN;
@@ -48,7 +48,7 @@ class lexer {
         }
         lexer(string input){
             inp = input;
-            cchar = inp.at(pos);
+            cchar = inp[pos];
         }
         void adv(){
             if (pos < inp.size()){
@@ -60,6 +60,7 @@ class lexer {
             return inp[++pos]; // returns next char
         }
         void skipWS(){
+            // skip whitespace
             if (isspace(cchar)){
                 adv();
             }

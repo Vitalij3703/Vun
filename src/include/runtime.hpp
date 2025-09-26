@@ -17,7 +17,7 @@ public:
 void run(){
     for(const auto& node : nodes){
     	if (node->type == "var"){
-    		std::cout << "Assigned var";
+    		std::cout << "[DEBUG] assigned var with the value "<<node->value<<"\n";
     	}
     }
 }};

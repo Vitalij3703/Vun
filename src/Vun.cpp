@@ -13,7 +13,7 @@ int main(int argc, char **argv){
         //idk do something
     }
     file.close();
-    runtime run = runtime(buffer);
+    runtime run(buffer);
     run.run();
     return 0;
 }

@@ -132,5 +132,11 @@ namespace ast {
             return v;
         }
     };
-
+    // reference
+    class ref : public n {
+        public:
+            ref(std::string ref, posit p = {})
+            : n("ref", {}, ref)
+            {}
+    };
 } 

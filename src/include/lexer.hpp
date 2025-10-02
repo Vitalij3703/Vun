@@ -20,7 +20,6 @@ struct tok {
 
 class lexer {
     private:
-        // token types (human x dog):
             enum token_type identefier = IDEF;
             enum token_type keyword = KEYW;
             enum token_type left_paren = LPAREN;

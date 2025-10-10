@@ -21,7 +21,7 @@ public:
         lexer l = lexer(in);
         this->input = l.tokenize();
         
-        if (input.empty()) throw ParseError({}); 
+        if (input.empty()) throw ParseError("Either, input empty or the lexer's at failure."); 
         ct = input[ipos];
     }
 
@@ -45,16 +45,29 @@ public:
         return ct.type == expected_token;
     }
 
+    bool match_next(token_type expected_token, const string& expected_char) {
+        if (ipos + 1 >= input.size()) return false;
+        const tok &t = input[ipos + 1];
+        return t.type == expected_token && t.value == expected_char;
+    }
+
+    bool match_next(token_type expected_token) {
+        if (ipos + 1 >= input.size()) return false;
+        return input[ipos + 1].type == expected_token;
+    }
+
     bool consume(token_type expected_token, string expected_char) {
-        if (match(expected_token, expected_char)) return true;
-        throw ParseError(ct);
+        if (match(expected_token, expected_char)) {adv();return true;};
+        throw ParseError("Consume expectation wasnt met. Position: "+to_string(ipos));
     }
 
     bool consume(token_type expected_token) {
-        if (match(expected_token)) return true;
-        throw ParseError(ct);
+        if (match(expected_token)) {adv();return true;};
+        throw ParseError("Consume exceptation wasnt met. Position: "+to_string(ipos));
     }
     
+
+
     vector<unique_ptr<ast::n>> parse() {
         vector<unique_ptr<ast::n>> nlist;
         while (ct.type != token_type::FE){
@@ -63,7 +76,7 @@ public:
                 nlist.push_back(std::move(node));
             } else {
                 
-                throw ParseError(ct);
+                throw ParseError("Nothing to parse.");
             }
         }
         return nlist;
@@ -79,14 +92,13 @@ public:
                 if (match(token_type::EQUL)) {
                     adv(); 
                     auto expr = parse_expr();
+                    consume(token_type::SEMI);
                     return make_unique<ast::var>(name, std::move(expr));
                 }
                 return make_unique<ast::var>(name, unique_ptr<ast::n>(nullptr));
             }
         }
-        else if (match(token_type::IDEF)){
-            
-            
+        else if (match(token_type::IDEF) && match_next(token_type::LPAREN)){
             return parse_call();
         }
         return parse_expr();
@@ -95,11 +107,9 @@ public:
     
     unique_ptr<ast::n> parse_call() {
         
-        if (!match(token_type::IDEF)) throw ParseError(ct);
         string func_name = ct.value;
         adv(); 
         consume(token_type::LPAREN);
-        adv(); 
         vector<unique_ptr<ast::n>> args;
         if (!match(token_type::RPAREN)) {
             do {
@@ -109,7 +119,7 @@ public:
             } while (true);
         }
         consume(token_type::RPAREN);
-        adv();
+        consume(token_type::SEMI);
         return make_unique<ast::call>(func_name, std::move(args));
     }
 
@@ -150,7 +160,6 @@ public:
             adv();
             auto node = parse_expr();
             consume(token_type::RPAREN);
-            adv();
             return node;
         } else if (ct.type == token_type::IDEF) {
             
@@ -163,7 +172,7 @@ public:
                 return make_unique<ast::ref>(name); 
             }
         } else {
-            throw ParseError(ct);
+            throw ParseError("Uh oh, pos is: "+to_string(ipos));
         }
     }
 };

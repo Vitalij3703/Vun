@@ -83,7 +83,7 @@ namespace ast {
         call(std::string fn_name,
              std::vector<std::unique_ptr<n>> args = {},
              posit p = {})
-        : n("call", {}, "", p),
+        : n("call", {}, fn_name, p),
           fn_name(std::move(fn_name)),
           args(std::move(args))
         {

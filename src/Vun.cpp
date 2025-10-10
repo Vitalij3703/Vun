@@ -1,19 +1,26 @@
 
-#include "include/runtime.hpp"
+#include "runtime.hpp"
 #include <iostream>
 #include <fstream>
 #include <string>
-int main(int argc, char **argv){
+
+int main(int argc, char *argv[]){
     if (argc < 2){
-    	std::cerr << "Usage: vun <file.vun>";
+    	std::cerr << "Usage: vun <file.vun>\n";
     }
-    std::fstream file(argv[2]);
-    std::string buffer;
-    while (std::getline(file, buffer)){
-        //idk do something
+    std::ifstream file(argv[1]);
+    std::string buffer = "";
+    if (file.is_open()){
+        std::string line;
+        while (std::getline(file, line)){
+            buffer += line;
+        }
+    } else {
+        std::cout <<"File doesnt exist.\n";
+        return 1;
     }
-    file.close();
     runtime run(buffer);
     run.run();
+    file.close();
     return 0;
 }

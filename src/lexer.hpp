@@ -50,7 +50,7 @@ class lexer {
             string result;
             adv();
             while (cchar != '"'){
-                cout << "making str, with "<<cchar<<endl;
+                //cout << "making str, with "<<cchar<<endl;
                 result+=cchar;
                 adv();
             }
@@ -61,18 +61,17 @@ class lexer {
             // builds an id
             string result;
             while (isalpha(cchar) || cchar == '_'){
-                cout << "making id, with " << cchar<<endl;
+                //cout << "making id, with " << cchar<<endl;
                 result+=cchar;
                 adv();
             }
-            cout << "result: "<<result;
+            
             return result;
         }
         int num_build(){
             // builds an int
             vector<int> result;
             while (isdigit(cchar)){
-                cout << "making int, with "<< cchar<<endl;
                 result.push_back(cchar);
                 adv();
             }
@@ -80,7 +79,6 @@ class lexer {
             for (int digit : result){
                 tstr+=to_string(digit);
             }
-            cout << "result: " << tstr<<endl;
             return stoi(tstr);
         }
         vector<tok> tokenize(){

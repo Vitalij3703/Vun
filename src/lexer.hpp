@@ -20,31 +20,10 @@ struct tok {
 
 class lexer {
     private:
-            enum token_type identefier = IDEF;
-            enum token_type keyword = KEYW;
-            enum token_type left_paren = LPAREN;
-            enum token_type right_paren = RPAREN;
-            enum token_type left_brace = LBRACE;
-            enum token_type right_brace = RBRACE;
-            enum token_type _string = STR;
-            enum token_type _int = INT;
-            enum token_type dot = DOT;
-            enum token_type equal = EQUL;
-            enum token_type equals = IS;
-            enum token_type divis = DIV;
-            enum token_type multi = MUL;
-            enum token_type plus = PLU;
-            enum token_type minus = MIN;
-            enum token_type semicolon = SEMI;
-        //
         string inp;
         int pos = 0;
         char cchar;
     public:
-        tok token(token_type type, string value){
-            // this function is the result of a human x horse (lazy developer x deleted class).
-            return {type, value};
-        }
         lexer(string input){
             inp = input;
             cchar = inp[pos];
@@ -108,94 +87,94 @@ class lexer {
             // tokenizes input
             vector<tok> tokens;
             while (cchar != '\0'){
-                cout << "processing char: "<<cchar<<endl;
-                cout << "current pos: "<<to_string(get_pos());
+                /*cout << "processing char: "<<cchar<<endl;
+                cout << "current pos: "<<to_string(get_pos()) << endl;*/
                 skipWS();
                 if (isalpha(cchar)){
                     // if current char is a letter and not a string, its either a keyword or an id
                     string id = id_build();
                     if (id == "str" || id == "int" || id == "import" || id == "if" || id == "while" || id == "func" || id == "return"){
-                        tokens.push_back(token(keyword, id));
+                        tokens.push_back({token_type::KEYW, id});
                         
                     } else {
-                        tokens.push_back(token(identefier, id));
+                        tokens.push_back({token_type::IDEF, id});
                         
                     }
                     continue;
                 }
                 if(cchar == '('){
-                    tokens.push_back(token(left_paren, "("));
+                    tokens.push_back({token_type::LPAREN, "("});
                     adv();
                     continue;
                 }
                 if(cchar == ')'){
-                    tokens.push_back(token(right_paren, ")"));
+                    tokens.push_back({token_type::RPAREN, ")"});
                     adv();
                     continue;
                 }
                 if(cchar == '{'){
-                    tokens.push_back(token(left_paren, "{"));
+                    tokens.push_back({token_type::LBRACE, "{"});
                     adv();
                     continue;
                 }
                 if(cchar == '}'){
-                    tokens.push_back(token(right_paren, "}"));
+                    tokens.push_back({token_type::RBRACE, "}"});
                     adv();
                     continue;
                 }
                 if(cchar == '"'){
                     string str = str_build();
-                    tokens.push_back(token(_string, str));
+                    tokens.push_back({token_type::STR, str});
                     adv();
                     continue;
                 }
                 if(isdigit(cchar)){
                     string numb = to_string(num_build());
                     string num = numb+"";
-                    tokens.push_back(token(_int, num));
+                    tokens.push_back({token_type::INT, num});
                     adv();
                     continue;
                 }
                 if(cchar == '.'){
-                    tokens.push_back(token(dot, "."));
+                    tokens.push_back({token_type::DOT});
                     adv();
                     continue;
                 }
                 if(cchar == '='){
                     if (next() == '='){
-                        tokens.push_back(token(equals, "=="));
+                        tokens.push_back({token_type::IS, "=="});
                         adv();
-                    } else {tokens.push_back(token(equal, "="));}
+                    } else {tokens.push_back({token_type::EQUL, "="});}
                     adv();
                 }
                 if(cchar == '/'){
-                    tokens.push_back(token(divis, "/"));
+                    tokens.push_back({token_type::DIV, "/"});
                     adv();
                     continue;
                 }
                 if(cchar == '*'){
-                    tokens.push_back(token(multi, "*"));
+                    tokens.push_back({token_type::MUL, "*"});
                     adv();
                     continue;
                 }
                 if(cchar == '-'){
-                    tokens.push_back(token(minus, "-"));
+                    tokens.push_back({token_type::MIN, "-"});
                     adv();
                     continue;
                 }
                 if(cchar == '+'){
-                    tokens.push_back(token(plus, "+"));
+                    tokens.push_back({token_type::PLU, "+"});
                     adv();
                     continue;
                 }
                 if (cchar == ',')
                 {
-                    tokens.push_back(token(token_type::COMMA, ","));
+                    tokens.push_back({token_type::COMMA, ","});
                     adv();
                 }
                 
                 if(cchar == ';'){
-                    tokens.push_back(token(semicolon, ";"));
+                    tokens.push_back({token_type::SEMI, ";"});
                     adv();
                     continue;
                 }
@@ -209,7 +188,7 @@ class lexer {
                 }
                 adv();
             }
-            tokens.push_back(token(token_type::FE, "\0"));
+            tokens.push_back({token_type::FE, "\0"});
             return tokens;
         }
 

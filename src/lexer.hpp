@@ -54,7 +54,7 @@ class lexer {
                 result+=cchar;
                 adv();
             }
-            cout << "result: " <<result<<endl;
+            //cout << "result: " <<result<<endl;
             return result;
         }
         string id_build(){

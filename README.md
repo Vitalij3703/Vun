@@ -1,3 +1,4 @@
+![Vun logo](logo.png)
 # Vun
 Vun is a high-level, lightweight, interpreted, statically-typed programming language. 
 # Build from source (cmake)

@@ -1,7 +1,7 @@
 <img src="logo.png" alt="Vun logo" width="150">
-# Vun
+<h1>Vun</h1><hr>
 Vun is a high-level, lightweight, interpreted, statically-typed programming language. 
-# Build from source (cmake)
+<h1> Build from source (cmake) </h1><hr>
 Run<br>
 <code>git clone https://github.com/Vitalij3703/Vun.git</code>
 then<br>

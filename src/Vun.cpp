@@ -20,7 +20,6 @@ int main(int argc, char *argv[]){
         return 1;
     }
     runtime run(buffer);
-    run.run();
     file.close();
     return 0;
 }

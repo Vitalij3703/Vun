@@ -27,6 +27,11 @@ namespace ast {
           children(std::move(children)),
           value(std::move(value)),
           pos(pos) {}
+        virtual const std::vector<std::string>* get_params() const { return nullptr; }
+        virtual const std::string get_type() const { return type; }
+        virtual const bool is_str_lit() const { return false; }
+        virtual const bool is_int_lit() const { return false; }
+        virtual const bool is_bool_lit() const { return false; }
     };
 	// literal
     class lit : public n {
@@ -40,6 +45,24 @@ namespace ast {
             if (std::holds_alternative<std::string>(literal)) value = std::get<std::string>(literal);
             else if (std::holds_alternative<int>(literal)) value = std::to_string(std::get<int>(literal));
             else value = std::get<bool>(literal) ? "true" : "false";
+        }
+        const bool is_str_lit() const override {
+            if (std::holds_alternative<std::string>(literal)){
+                return true;
+            }
+            return false;
+        }
+        const bool is_int_lit() const override {
+            if (std::holds_alternative<int>(literal)){
+                return true;
+            }
+            return false;
+        }
+        const bool is_bool_lit() const override {
+            if (std::holds_alternative<bool>(literal)){
+                return true;
+            }
+            return false;
         }
     };
 	// binary expr
@@ -60,7 +83,7 @@ namespace ast {
             return v;
         }
     };
-	// function
+	// function node
     class fn : public n {
     public:
         std::string name;
@@ -73,6 +96,9 @@ namespace ast {
         : n("function", std::move(body), name, p),
           name(std::move(name)),
           params(std::move(params)) {}
+        const std::vector<std::string>* get_params() const override {
+            return &params;
+        }
     };
 	// callable
     class call : public n {
@@ -121,10 +147,11 @@ namespace ast {
 	// variable
     class var : public n {
     public:
-        var(std::string name, std::unique_ptr<n> valueExpr, posit p = {})
-        : n("var", make_vector(std::move(valueExpr)), std::move(name), p)
+        std::string type;
+        var(std::string name, std::unique_ptr<n> valueExpr, std::string type, posit p = {})
+        : n("var", make_vector(std::move(valueExpr)), std::move(name), p), type(type)
         {}
-
+        virtual const std::string get_type() const { return type; }
     private:
         static std::vector<std::unique_ptr<n>> make_vector(std::unique_ptr<n> value) {
             std::vector<std::unique_ptr<n>> v;

@@ -11,7 +11,7 @@ class ParseError {
 };
 class RuntimeError {
     public:
-    RuntimeError(){
-        cerr << "RuntimeError. please find what caused it."<<endl;
+    RuntimeError(string text){
+        cerr << "RuntimeError:\n\t"<<text<<endl;
     }
 };

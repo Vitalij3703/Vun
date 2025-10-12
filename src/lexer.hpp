@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <cctype>
+
 using namespace std;
 enum token_type {
     IDEF, LPAREN, RPAREN, LBRACE, RBRACE, KEYW,
@@ -70,16 +71,12 @@ class lexer {
         }
         int num_build(){
             // builds an int
-            vector<int> result;
+            string result;
             while (isdigit(cchar)){
                 result.push_back(cchar);
                 adv();
             }
-            string tstr;
-            for (int digit : result){
-                tstr+=to_string(digit);
-            }
-            return stoi(tstr);
+            return stoi(result);
         }
         vector<tok> tokenize(){
             // tokenizes input
@@ -127,9 +124,8 @@ class lexer {
                     continue;
                 }
                 if(isdigit(cchar)){
-                    string numb = to_string(num_build());
-                    string num = numb+"";
-                    tokens.push_back({token_type::INT, num});
+                    int num = num_build();
+                    tokens.push_back({token_type::INT, to_string(num)});
                     adv();
                     continue;
                 }

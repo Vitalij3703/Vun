@@ -1,0 +1,4 @@
+func int greet(str arg){
+    IOds_println(arg);
+}
+greet("Hello, World!")

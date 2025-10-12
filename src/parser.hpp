@@ -7,6 +7,7 @@
 #include "err.hpp"
 #include <memory>
 #include "ast.hpp"
+#include <unordered_map>
 using namespace std;
 
 class parser {
@@ -65,7 +66,6 @@ public:
         if (match(expected_token)) {adv();return true;};
         throw ParseError("Consume exceptation wasnt met. Position: "+to_string(ipos));
     }
-    
 
 
     vector<unique_ptr<ast::n>> parse() {
@@ -101,10 +101,61 @@ public:
         else if (match(token_type::IDEF) && match_next(token_type::LPAREN)){
             return parse_call();
         }
+        else if (match(token_type::KEYW, "func")){
+            return parse_func();
+        }
+        else if (match(token_type::KEYW, "return")) return parse_fuck();
         return parse_expr();
     }
 
-    
+    unique_ptr<ast::n> parse_func(){
+        consume(token_type::KEYW, "func");
+        if (!match(token_type::IDEF)) throw ParseError("Expected function name");
+        string name = ct.value;
+        adv();
+        consume(token_type::LPAREN);
+        vector<unordered_map<string, string>> params = {};
+
+        if (!match(token_type::RPAREN)) {
+            do {
+                unordered_map<string, string> param;
+                //            type    name
+
+                string type_buf, name_buf;
+                if (!(match(token_type::KEYW, "int") || !match(token_type::KEYW, "str"))) throw ParseError("Excepted parameter name.");
+                type_buf = ct.value;
+                adv();
+                if (!match(token_type::IDEF)) throw ParseError("Expected parameter name");
+                name_buf = ct.value;
+                adv();
+                param.insert_or_assign(type_buf, name_buf); // insert type and name into param
+                params.push_back(param);                    // push back param into params
+                if (match(token_type::COMMA)) adv(); 
+                else break;
+            } while (true);
+        }
+        consume(token_type::RPAREN);
+        consume(token_type::LBRACE);
+        vector<unique_ptr<ast::n>> body;
+        while (!match(token_type::RBRACE)) {
+            body.push_back(parse_stat());
+        }
+        consume(token_type::RBRACE);
+        return make_unique<ast::fn>(name, std::move(params), std::move(body));
+
+    }
+    unique_ptr<ast::n> parse_fuck() {
+        consume(token_type::KEYW, "return");
+        auto expr = parse_expr();
+        consume(token_type::SEMI);
+        return make_unique<ast::n>("return", make_vector(std::move(expr)));
+    }
+
+    static vector<unique_ptr<ast::n>> make_vector(unique_ptr<ast::n> node) {
+        vector<unique_ptr<ast::n>> v;
+        v.push_back(std::move(node));
+        return v;
+    }
     unique_ptr<ast::n> parse_call() {
         
         string func_name = ct.value;
@@ -172,7 +223,7 @@ public:
                 return make_unique<ast::ref>(name); 
             }
         } else {
-            throw ParseError("Uh oh, pos is: "+to_string(ipos));
+            throw ParseError("Invalid expresion, pos is: "+to_string(ipos));
         }
     }
 };

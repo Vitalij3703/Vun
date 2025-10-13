@@ -4,6 +4,7 @@
 #include <variant>
 #include <memory>
 #include "err.hpp"
+#include <utility>
 
 struct posit {
     int line = 0;
@@ -27,7 +28,7 @@ namespace ast {
           children(std::move(children)),
           value(std::move(value)),
           pos(pos) {}
-        virtual const std::vector<std::string>* get_params() const { return nullptr; }
+        virtual const std::vector<std::pair<std::string, std::string>>* get_params() const { return nullptr; }
         virtual const std::string get_type() const { return type; }
         virtual const bool is_str_lit() const { return false; }
         virtual const bool is_int_lit() const { return false; }
@@ -87,16 +88,16 @@ namespace ast {
     class fn : public n {
     public:
         std::string name;
-        std::vector<std::string> params;
+        std::vector<std::pair<std::string, std::string>> params;
 
         fn(std::string name,
-           std::vector<std::string> params = {},
+           std::vector<std::pair<std::string, std::string>> params = {},
            std::vector<std::unique_ptr<n>> body = {},
            posit p = {})
         : n("function", std::move(body), name, p),
           name(std::move(name)),
           params(std::move(params)) {}
-        const std::vector<std::string>* get_params() const override {
+        const std::vector<std::pair<std::string, std::string>>* get_params() const override {
             return &params;
         }
     };

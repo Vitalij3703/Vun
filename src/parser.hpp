@@ -1,4 +1,4 @@
-// ill expand the parser in the future
+
 #pragma once
 #include <iostream>
 #include <string>
@@ -7,7 +7,7 @@
 #include "err.hpp"
 #include <memory>
 #include "ast.hpp"
-#include <unordered_map>
+#include <utility>
 using namespace std;
 
 class parser {
@@ -85,6 +85,7 @@ public:
     
     unique_ptr<ast::n> parse_stat() {
         if (match(token_type::KEYW, "int") || match(token_type::KEYW, "str")) {
+            auto t = ct.value;
             adv(); 
             if (match(token_type::IDEF)) {
                 string name = ct.value;
@@ -93,9 +94,9 @@ public:
                     adv(); 
                     auto expr = parse_expr();
                     consume(token_type::SEMI);
-                    return make_unique<ast::var>(name, std::move(expr));
+                    return make_unique<ast::var>(name, std::move(expr), t);
                 }
-                return make_unique<ast::var>(name, unique_ptr<ast::n>(nullptr));
+                return make_unique<ast::var>(name, unique_ptr<ast::n>(nullptr), t);
             }
         }
         else if (match(token_type::IDEF) && match_next(token_type::LPAREN)){
@@ -110,27 +111,29 @@ public:
 
     unique_ptr<ast::n> parse_func(){
         consume(token_type::KEYW, "func");
+        if (!(match(token_type::KEYW, "str") || match(token_type::KEYW, "int") || match(token_type::KEYW, "void")))
+            throw ParseError("Expected return type.");
+        string ret_type = ct.value;
+        adv();
         if (!match(token_type::IDEF)) throw ParseError("Expected function name");
         string name = ct.value;
         adv();
         consume(token_type::LPAREN);
-        vector<unordered_map<string, string>> params = {};
+
+        vector<pair<string,string>> params;
 
         if (!match(token_type::RPAREN)) {
             do {
-                unordered_map<string, string> param;
-                //            type    name
-
                 string type_buf, name_buf;
-                if (!(match(token_type::KEYW, "int") || !match(token_type::KEYW, "str"))) throw ParseError("Excepted parameter name.");
+                if (!(match(token_type::KEYW, "int") || match(token_type::KEYW, "str")))
+                    throw ParseError("Expected parameter type.");
                 type_buf = ct.value;
                 adv();
                 if (!match(token_type::IDEF)) throw ParseError("Expected parameter name");
                 name_buf = ct.value;
                 adv();
-                param.insert_or_assign(type_buf, name_buf); // insert type and name into param
-                params.push_back(param);                    // push back param into params
-                if (match(token_type::COMMA)) adv(); 
+                params.emplace_back(type_buf, name_buf);
+                if (match(token_type::COMMA)) adv();
                 else break;
             } while (true);
         }
@@ -142,7 +145,6 @@ public:
         }
         consume(token_type::RBRACE);
         return make_unique<ast::fn>(name, std::move(params), std::move(body));
-
     }
     unique_ptr<ast::n> parse_fuck() {
         consume(token_type::KEYW, "return");

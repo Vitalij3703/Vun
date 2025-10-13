@@ -13,7 +13,7 @@ bool debug = false;
 
 // parse binary expression
 float pbexpr(ast::n* expr){
-    if (!(expr->type=="binaryop")) return;
+    if (!(expr->type=="binaryop")) return 0.0f;
     auto* left = expr->children[0].get();
     int leftval;
     auto* right = expr->children[1].get();
@@ -97,18 +97,20 @@ float pbexpr(ast::n* expr){
         else {
             rightval = static_cast<int>(pbexpr(right));
         }
-        result = leftval - rightval;
+        result = leftval / rightval;
         return result;
     }
     throw ParseError("Invalid binary expression");
 
 }
 
+
+
 class runtime {
     std::vector<std::unique_ptr<ast::n>> nodesl;
-    std::unordered_map<std::string, std::string> vars;
-    //                 name         value
-    std::unordered_map<std::string, ast::fn*> functions; // stores functions so other nodes can access it
+    std::unordered_map<std::string, std::string> vars;   // stores variables
+    //                 name         value                ||
+    std::unordered_map<std::string, ast::n*> functions; // stores functions so other nodes can access it
 
 public:
     runtime(const std::string& in) {
@@ -116,7 +118,7 @@ public:
         if (debug) std::cout << "[DEBUG] input size: " <<in.size()<<"\n";
         nodesl = p.parse();
         if (debug) std::cout << "[DEBUG] parsed nodes count: " << nodesl.size() << "\n";
-        run(nodesl);
+        run(std::move(nodesl));
     }
 
 void run(std::vector<std::unique_ptr<ast::n>> nodes) {
@@ -145,7 +147,7 @@ void run(std::vector<std::unique_ptr<ast::n>> nodes) {
         }
         if (node->type == "function"){
             if (debug) std::cout << "[DEBUG] processing function: \""<<node->value<<"\"\n";
-            functions.insert_or_assign(node->value, node); // inserts function into functions so other nodes can access it
+            functions.insert_or_assign(node->value, node.get()); // inserts function into functions so other nodes can access it
 
         }
         // finally the fun part
@@ -156,7 +158,7 @@ void run(std::vector<std::unique_ptr<ast::n>> nodes) {
 
             for (auto& fn : functions){
                 if (fn.first == call_name){
-                    run(fn.second->children);
+                    run(std::move(fn.second->children));
                 }
             }
             
@@ -167,9 +169,17 @@ void run(std::vector<std::unique_ptr<ast::n>> nodes) {
                     if(arg->type == "literal"){
                         std::cout << arg->value;
                     }
-                    if (arg->type == "binaryop"){
+                    else if (arg->type == "binaryop"){
                         std::cout << std::to_string(pbexpr(arg.get()));
                     }
+                    else if (arg->type == "ref") {
+                        for (auto& var : vars){
+                            if (arg->value == var.first){
+                                std::cout << var.second;
+                            }
+                        }
+                    }
+                    
                 }
             }
             // same as IOds_print but also adds a newline whitespace at the end
@@ -178,21 +188,35 @@ void run(std::vector<std::unique_ptr<ast::n>> nodes) {
                     if(arg->type == "literal"){
                         std::cout << arg->value << "\n";
                     }
-                    if (arg->type == "binaryop"){
-                        std::cout << std::to_string(pbexpr(arg.get()));
+                    else if (arg->type == "binaryop"){
+                        std::cout << std::to_string(pbexpr(arg.get())) << "\n";
+                    }
+                    else if (arg->type == "ref") {
+                        for (auto& var : vars){
+                            if (arg->value == var.first){
+                                std::cout << var.second << "\n";
+                            }
+                        }
                     }
                 }
             }
 
 
-            // prints the (literal)args to error stream
+            // prints the args to error stream
             if (call_name == "IOes_print"){
                 for(auto& arg : args){
                     if(arg->type == "literal"){
                         std::cerr << arg->value;
                     }
-                    if (arg->type == "binaryop"){
+                    else if (arg->type == "binaryop"){
                         std::cerr << std::to_string(pbexpr(arg.get()));
+                    }
+                    else if (arg->type == "ref") {
+                        for (auto& var : vars){
+                            if (arg->value == var.first){
+                                std::cerr << var.second;
+                            }
+                        }
                     }
                 }
             }
@@ -203,7 +227,14 @@ void run(std::vector<std::unique_ptr<ast::n>> nodes) {
                         std::cerr << arg->value << "\n";
                     }
                     if (arg->type == "binaryop"){
-                        std::cerr << std::to_string(pbexpr(arg.get()));
+                        std::cerr << std::to_string(pbexpr(arg.get())) << "\n";
+                    }
+                    else if (arg->type == "ref") {
+                        for (auto& var : vars){
+                            if (arg->value == var.first){
+                                std::cerr << var.second << "\n";
+                            }
+                        }
                     }
                 }
             }

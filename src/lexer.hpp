@@ -88,7 +88,7 @@ class lexer {
                 if (isalpha(cchar)){
                     // if current char is a letter and not a string, its either a keyword or an id
                     string id = id_build();
-                    if (id == "str" || id == "int" || id == "import" || id == "if" || id == "while" || id == "func" || id == "return"){
+                    if (id == "str" || id == "int" || id == "import" || id == "if" || id == "while" || id == "func" || id == "return" || id == "void"){
                         tokens.push_back({token_type::KEYW, id});
                         
                     } else {

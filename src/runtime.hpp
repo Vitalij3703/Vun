@@ -13,96 +13,45 @@ bool debug = false;
 
 // parse binary expression
 float pbexpr(ast::n* expr){
-    if (!(expr->type=="binaryop")) return 0.0f;
-    auto* left = expr->children[0].get();
-    int leftval;
-    auto* right = expr->children[1].get();
-    int rightval;
+    if (!(expr->type == "binaryop")) throw ParseError("pbexpr called on non-binary node");
+    ast::n* left = expr->children[0].get();
+    ast::n* right = expr->children[1].get();
     std::string op = expr->value;
-    float result;
-    if (op == OPS[0]){
-        if (left->type == "literal"){
-            if (left->is_int_lit()){
-                leftval = std::stoi(left->value);
-            }
-        }
-        else {
-            leftval = static_cast<int>(pbexpr(left));
-        }
-        if (right->type == "literal"){
-            if (right->is_int_lit()){
-                rightval = std::stoi(right->value);
-            }
-        }
-        else {
-            rightval = static_cast<int>(pbexpr(right));
-        }
-        result = leftval + rightval;
-        return result;
-    }
-    if (op == OPS[1]){
-        if (left->type == "literal"){
-            if (left->is_int_lit()){
-                leftval = std::stoi(left->value);
-            }
-        }
-        else {
-            leftval = static_cast<int>(pbexpr(left));
-        }
-        if (right->type == "literal"){
-            if (right->is_int_lit()){
-                rightval = std::stoi(right->value);
-            }
-        }
-        else {
-            rightval = static_cast<int>(pbexpr(right));
-        }
-        result = leftval - rightval;
-        return result;
-    }
-    if (op == OPS[2]){
-        if (left->type == "literal"){
-            if (left->is_int_lit()){
-                leftval = std::stoi(left->value);
-            }
-        }
-        else {
-            leftval = static_cast<int>(pbexpr(left));
-        }
-        if (right->type == "literal"){
-            if (right->is_int_lit()){
-                rightval = std::stoi(right->value);
-            }
-        }
-        else {
-            rightval = static_cast<int>(pbexpr(right));
-        }
-        result = leftval * rightval;
-        return result;
-    }
-    if (op == OPS[3]){
-        if (left->type == "literal"){
-            if (left->is_int_lit()){
-                leftval = std::stoi(left->value);
-            }
-        }
-        else {
-            leftval = static_cast<int>(pbexpr(left));
-        }
-        if (right->type == "literal"){
-            if (right->is_int_lit()){
-                rightval = std::stoi(right->value);
-            }
-        }
-        else {
-            rightval = static_cast<int>(pbexpr(right));
-        }
-        result = leftval / rightval;
-        return result;
-    }
-    throw ParseError("Invalid binary expression");
 
+    auto evalNodeToFloat = [&](ast::n* node) -> float {
+        if (!node) throw ParseError("Null node in expression");
+        if (node->type == "literal") {
+            try {
+                if (node->is_int_lit()) {
+                    return static_cast<float>(std::stoll(node->value));
+                } else {
+                    return std::stof(node->value);
+                }
+            } catch (...) {
+                throw ParseError(std::string("Invalid numeric literal: ") + node->value);
+            }
+        } else if (node->type == "binaryop") {
+            return pbexpr(node);
+        } else if (node->type == "ref") {
+            throw ParseError("Working on this!");
+        } else {
+            throw ParseError("Unsupported node type in numeric expression: " + node->type);
+        }
+    };
+
+    float l = evalNodeToFloat(left);
+    float r = evalNodeToFloat(right);
+
+    if (op == "+") return l + r;
+    if (op == "-") return l - r;
+    if (op == "*") return l * r;
+    if (op == "/") {
+        if (r == 0.0f) throw RuntimeError("Division by zero in binary expression");
+        return l / r;
+    }
+    throw ParseError("Invalid binary operator: " + op);
 }
+
 
 
 
@@ -156,13 +105,57 @@ void run(std::vector<std::unique_ptr<ast::n>> nodes) {
             std::string call_name = node->value;
             std::vector<std::unique_ptr<ast::n>> args = std::move(node->children);
 
-            for (auto& fn : functions){
-                if (fn.first == call_name){
-                    run(std::move(fn.second->children));
+            auto it_fn = functions.find(call_name);
+            if (it_fn != functions.end()) {
+                ast::n* fn_node = it_fn->second;
+                auto params_ptr = fn_node->get_params();
+                if (!params_ptr) throw RuntimeError("Function has no params container");
+                auto& params = *params_ptr;
+            
+                if (params.size() != args.size()) {
+                    throw RuntimeError("Argument count mismatch when calling function '" + call_name + "'");
                 }
-            }
-            
-            
+                auto old_vars = vars;
+                for (size_t i = 0; i < params.size(); ++i) {
+                    const std::string& param_name = params[i].second;
+                    const std::string& expected_type = params[i].first;
+                
+                    ast::n* arg = args[i].get();
+                    std::string value_to_store;
+                
+                    if (!arg) throw RuntimeError("Null argument passed");
+                
+                    if (arg->type == "literal") {
+                        std::string actual_type;
+                        if (arg->is_str_lit()) actual_type = "str";
+                        else if (arg->is_int_lit()) actual_type = "int";
+                        else if (arg->is_bool_lit()) actual_type = "bool";
+                        else actual_type = "void";
+                    
+                        if (expected_type != actual_type) {
+                            throw RuntimeError("Expected argument of type '" + expected_type +
+                                "' but got '" + actual_type + "' for param '" + param_name + "'");
+                        }
+                        value_to_store = arg->value;
+                    } else if (arg->type == "binaryop") {
+                        float f = pbexpr(arg);
+                        if (expected_type == "int") {
+                            value_to_store = std::to_string(static_cast<long long>(f));
+                        } else {
+                            value_to_store = std::to_string(f);
+                        }
+                    } else if (arg->type == "ref") {
+                        auto vit = vars.find(arg->value);
+                        if (vit == vars.end()) throw RuntimeError("Unknown variable: " + arg->value);
+                        value_to_store = vit->second;
+                    } else {
+                        throw RuntimeError("Unsupported arg type for function call: " + arg->type);
+                    }
+                    vars.insert_or_assign(param_name, value_to_store);
+                }
+                run(std::move(fn_node->children));
+                vars = std::move(old_vars);
+            }    
             // prints the args of the callable to default stream
             if (call_name == "IOds_print"){
                 for(auto& arg : args){

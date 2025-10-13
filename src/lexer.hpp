@@ -37,7 +37,7 @@ class lexer {
             } else {cchar = '\0';}
         }
         char next(){
-            return inp[++pos]; // returns next char
+            return inp[pos+1]; // returns next char
         }
         void skipWS(){
             // skip whitespace
@@ -73,7 +73,7 @@ class lexer {
             // builds an int
             string result;
             while (isdigit(cchar)){
-                result.push_back(cchar);
+                result+=cchar;
                 adv();
             }
             return stoi(result);

@@ -28,15 +28,16 @@ public:
 
     void adv() {
         ipos++;
-        if (ipos < input.size()) ct = input.at(ipos);
-        else ct = input.back(); 
+        if (ipos < input.size()) {
+            ct = input.at(ipos);
+        }
     }
 
     tok next() {
-        
         adv();
         return ct;
     }
+
 
     bool match(token_type expected_token, string expected_char) {
         return ct.type == expected_token && ct.value == expected_char;
@@ -100,7 +101,9 @@ public:
             }
         }
         else if (match(token_type::IDEF) && match_next(token_type::LPAREN)){
-            return parse_call();
+            auto call = parse_call();
+            consume(token_type::SEMI);
+            return call;
         }
         else if (match(token_type::KEYW, "func")){
             return parse_func();
@@ -159,20 +162,18 @@ public:
         return v;
     }
     unique_ptr<ast::n> parse_call() {
-        
         string func_name = ct.value;
         adv(); 
         consume(token_type::LPAREN);
         vector<unique_ptr<ast::n>> args;
         if (!match(token_type::RPAREN)) {
             do {
-                args.push_back(std::move(parse_expr()));
+                args.push_back(parse_expr());
                 if (match(token_type::COMMA)) adv();
                 else break;
             } while (true);
         }
         consume(token_type::RPAREN);
-        consume(token_type::SEMI);
         return make_unique<ast::call>(func_name, std::move(args));
     }
 
@@ -217,7 +218,6 @@ public:
         } else if (ct.type == token_type::IDEF) {
             
             if (ipos + 1 < input.size() && input[ipos+1].type == token_type::LPAREN) {
-                
                 return parse_call();
             } else {
                 string name = ct.value;

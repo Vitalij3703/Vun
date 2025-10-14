@@ -1,12 +1,14 @@
 
 #include "runtime.hpp"
+#include "repl.hpp"
 #include <iostream>
 #include <fstream>
 #include <string>
 
 int main(int argc, char *argv[]){
     if (argc < 2){
-    	std::cerr << "Usage: vun <file.vun>\n";
+    	std::cout << "Usage: vun <file.vun>\n";
+        repl();
     }
     std::ifstream file(argv[1]);
     std::string buffer = "";

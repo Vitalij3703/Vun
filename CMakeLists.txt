@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 4.0)
-project(Vun)
+project(vun)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_FLAGS "-Ofast -s -ffunction-sections -fdata-sections -march=native -flto -DNDEBUG")
-add_executable(Vun src/Vun.cpp)
+add_executable(vun src/Vun.cpp)
 target_include_directories(Vun PRIVATE src)
 

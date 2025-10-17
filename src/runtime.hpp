@@ -254,6 +254,7 @@ public:
 
                 if (call_name == "IOds_print") {
                     // print each child expression's string representation
+                    if(size(node->children) == 1){std::cout << evaluateExpression(node->children[1].get());
                     for (const auto& child : node->children) {
                         Value arg = evaluateExpression(child.get());
                         std::cout << arg.to_string();
@@ -261,6 +262,7 @@ public:
                     continue;
                 }
                 if (call_name == "IOds_println") {
+if(size(node->children) == 1){std::cout << evaluateExpression(node->children[1].get())<<"\n";
                     for (const auto& child : node->children) {
                         Value arg = evaluateExpression(child.get());
                         std::cout << arg.to_string();
@@ -269,6 +271,7 @@ public:
                     continue;
                 }
                 if (call_name == "IOes_print") {
+if(size(node->children) == 1){std::cerr << evaluateExpression(node->children[1].get());
                     for (const auto& child : node->children) {
                         Value arg = evaluateExpression(child.get());
                         std::cerr << arg.to_string();
@@ -276,6 +279,7 @@ public:
                     continue;
                 }
                 if (call_name == "IOes_println") {
+if(size(node->children) == 1){std::cerr << evaluateExpression(node->children[1].get()) << "\n";
                     for (const auto& child : node->children) {
                         Value arg = evaluateExpression(child.get());
                         std::cerr << arg.to_string();

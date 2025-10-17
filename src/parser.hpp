@@ -8,20 +8,52 @@
 #include <memory>
 #include "ast.hpp"
 #include <utility>
+#include <sstream>
 using namespace std;
+
+// helper to print token enum names
+static std::string token_type_name(token_type t) {
+    switch (t) {
+        case IDEF: return "IDEF";
+        case LPAREN: return "LPAREN";
+        case RPAREN: return "RPAREN";
+        case LBRACE: return "LBRACE";
+        case RBRACE: return "RBRACE";
+        case KEYW: return "KEYW";
+        case STR: return "STR";
+        case INT: return "INT";
+        case DOT: return "DOT";
+        case COMMA: return "COMMA";
+        case EQUL: return "EQUL";
+        case IS: return "IS";
+        case DIV: return "DIV";
+        case MUL: return "MUL";
+        case MIN: return "MIN";
+        case PLU: return "PLU";
+        case SEMI: return "SEMI";
+        case FE: return "FE";
+        default: return "NULL";
+    }
+}
 
 class parser {
 private:
     vector<tok> input;
     size_t ipos = 0;
     tok ct;
+    std::string src;
 
 public:
     
-    parser(string in) {
+    parser(string in):src(in) {
         lexer l = lexer(in);
         this->input = l.tokenize();
-        
+        /*cout << "[-----Token dump-----]\n";
+        for(int i=0;i<size(input); i++){
+            cout << to_string(i) <<": "<<token_type_name(input[i].type)<<"("<<input[i].value<<")"<<"\n";
+        }*/
+
+
         if (input.empty()) throw ParseError("Either, input empty or the lexer's at failure."); 
         ct = input[ipos];
     }
@@ -30,6 +62,10 @@ public:
         ipos++;
         if (ipos < input.size()) {
             ct = input.at(ipos);
+        } else {
+            ct = tok();
+            ct.type = token_type::FE;
+            ct.value = "";
         }
     }
 
@@ -58,15 +94,39 @@ public:
         return input[ipos + 1].type == expected_token;
     }
 
-    bool consume(token_type expected_token, string expected_char) {
-        if (match(expected_token, expected_char)) {adv();return true;};
-        throw ParseError("Consume expectation wasnt met. Position: "+to_string(ipos));
+    bool consume(token_type expected_token, const string& expected_char) {
+        if (match(expected_token, expected_char)) { adv(); return true; }
+        std::ostringstream oss;
+        oss << "expected token (" << token_type_name(expected_token)
+            << " / \"" << expected_char << "\") but got (" << token_type_name(ct.type)
+            << " / \"" << ct.value << "\") at ipos: " << ipos<<"\n";
+        if (!src.empty()) {
+            oss << "\n";
+            size_t pos = ipos < src.size() ? ipos : src.size();
+            size_t start = pos > 30 ? pos - 30 : 0;
+            size_t end = std::min(src.size(), pos + 30);
+            oss << "reference: \"" << src.substr(start, end - start) << "\"\n";
+            oss << std::string((size_t) (ipos - start), ' ') << "^\n";
+        }
+        throw ParseError(oss.str());
     }
 
     bool consume(token_type expected_token) {
-        if (match(expected_token)) {adv();return true;};
-        throw ParseError("Consume exceptation wasnt met. Position: "+to_string(ipos));
+        if (match(expected_token)) { adv(); return true; }
+        std::ostringstream oss;
+        oss << "expected token (" << token_type_name(expected_token)
+            << ") but got (" << token_type_name(ct.type) << " / \"" << ct.value << "\") at ipos: " << ipos<<"\n";
+        if (!src.empty()) {
+            oss << "\n";
+            size_t pos = ipos < src.size() ? ipos : src.size();
+            size_t start = pos > 30 ? pos - 30 : 0;
+            size_t end = std::min(src.size(), pos + 30);
+            oss << "reference: \"" << src.substr(start, end - start) << "\"\n";
+            oss << std::string((size_t) (ipos - start), ' ') << "^\n";
+        }
+        throw ParseError(oss.str());
     }
+
 
 
     vector<unique_ptr<ast::n>> parse() {
@@ -109,6 +169,7 @@ public:
             return parse_func();
         }
         else if (match(token_type::KEYW, "return")) return parse_fuck();
+        else if (match(token_type::KEYW, "for")) return parse_for();
         return parse_expr();
     }
 
@@ -155,6 +216,36 @@ public:
         consume(token_type::SEMI);
         return make_unique<ast::n>("return", make_vector(std::move(expr)));
     }
+    std::unique_ptr<ast::n> parse_for() {
+        consume(token_type::KEYW, "for");
+        consume(token_type::LPAREN);
+        std::unique_ptr<ast::n> times;
+        if (match(token_type::INT)) {
+            auto tmp = std::make_unique<ast::lit>(stoi(ct.value));
+            adv();
+            times = std::unique_ptr<ast::n>(std::move(tmp));
+        }
+        else if (match(token_type::IDEF)) {
+            auto tmp = std::make_unique<ast::ref>(ct.value);
+            adv();
+            times = std::unique_ptr<ast::n>(std::move(tmp));
+        }
+        else {
+            throw ParseError("expected integer or identifier in for(...)");
+        }
+
+        consume(token_type::RPAREN);
+        consume(token_type::LBRACE);
+
+        std::vector<std::unique_ptr<ast::n>> body;
+        while (!match(token_type::RBRACE)) {
+            auto stmt = parse_stat();
+            if (!stmt) throw ParseError("invalid statement inside for body");
+            body.push_back(std::move(stmt));
+        }
+        consume(token_type::RBRACE);
+        return std::make_unique<ast::frn>(std::move(times), std::move(body));
+    }
 
     static vector<unique_ptr<ast::n>> make_vector(unique_ptr<ast::n> node) {
         vector<unique_ptr<ast::n>> v;
@@ -169,7 +260,7 @@ public:
         if (!match(token_type::RPAREN)) {
             do {
                 args.push_back(parse_expr());
-                if (match(token_type::COMMA)) adv();
+                if (match(token_type::COMMA)) {adv(); continue;}
                 else break;
             } while (true);
         }

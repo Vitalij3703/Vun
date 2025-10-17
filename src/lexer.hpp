@@ -11,11 +11,14 @@ enum token_type {
     IDEF, LPAREN, RPAREN, LBRACE, RBRACE, KEYW,
     STR, INT, DOT, COMMA,
     EQUL, IS, DIV, MUL, MIN, PLU,
-    SEMI, FE
+    SEMI, FE, _NULL
 };
 struct tok {
     enum token_type type;
     string value;
+    tok(enum token_type t, string v):type(t),value(v){}
+    tok():type(token_type::_NULL), value(""){}
+    tok(enum token_type t):type(t), value(""){}
 };
 
 
@@ -88,7 +91,7 @@ class lexer {
                 if (isalpha(cchar)){
                     // if current char is a letter and not a string, its either a keyword or an id
                     string id = id_build();
-                    if (id == "str" || id == "int" || id == "import" || id == "if" || id == "while" || id == "func" || id == "return" || id == "void"){
+                    if (id == "str" || id == "int" || id == "*import" || id == "if" || id == "for" || id == "func" || id == "return" || id == "void"){
                         tokens.push_back({token_type::KEYW, id});
                         
                     } else {
@@ -126,7 +129,6 @@ class lexer {
                 if(isdigit(cchar)){
                     int num = num_build();
                     tokens.push_back({token_type::INT, to_string(num)});
-                    adv();
                     continue;
                 }
                 if(cchar == '.'){

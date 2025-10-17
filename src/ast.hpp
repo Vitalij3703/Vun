@@ -33,6 +33,7 @@ namespace ast {
         virtual const bool is_str_lit() const { return false; }
         virtual const bool is_int_lit() const { return false; }
         virtual const bool is_bool_lit() const { return false; }
+        virtual std::unique_ptr<n> a() { return make_unique<n>(""); }
     };
 	// literal
     class lit : public n {
@@ -131,19 +132,16 @@ namespace ast {
             children.insert(children.begin(), std::move(this->condition));
         }
     };
-	// while
-    class wn : public n {
+	// for
+    class frn : public n {
     public:
-        std::unique_ptr<n> condition;
+        std::unique_ptr<n> _t;
+        std::vector<std::unique_ptr<n>> _b;
+        frn(std::unique_ptr<n> times, std::vector<std::unique_ptr<n>> body, posit p = {})
+        : n("for", std::move(body), "", p), _t(std::move(times)) {}
+        
+        virtual std::unique_ptr<n> a() {return std::move(_t);} // return the times
 
-        wn(std::unique_ptr<n> condition,
-           std::vector<std::unique_ptr<n>> body = {},
-           posit p = {})
-        : n("while", std::move(body), "", p),
-          condition(std::move(condition))
-        {
-            children.insert(children.begin(), std::move(this->condition));
-        }
     };
 	// variable
     class var : public n {

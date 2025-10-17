@@ -1,0 +1,6 @@
+func void test(int a){
+    for(a){
+        IOds_println("HEllo");
+    }
+}
+test(67);

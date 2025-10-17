@@ -6,12 +6,12 @@ using namespace std;
 class ParseError {
     public:
     ParseError(string text){
-        cerr << "ParseError:\n\t"<<text<<endl;
+        cerr << "\033[1;31mParseError:\n\t"<<text<<"\033[0m\n"<<endl;
     }
 };
 class RuntimeError {
     public:
     RuntimeError(string text){
-        cerr << "RuntimeError:\n\t"<<text<<endl;
+        cerr << "\033[1;31mRuntimeError:\n\t"<<text<<"\033[0m\n"<<endl;
     }
 };

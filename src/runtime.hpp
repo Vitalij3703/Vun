@@ -254,33 +254,39 @@ public:
 
                 if (call_name == "IOds_print") {
                     // print each child expression's string representation
+                   std::string buf="";
                     for (const auto& child : node->children) {
                         Value arg = evaluateExpression(child.get());
-                        std::cout << arg.to_string();
+                        buf+=arg.to_string();
                     }
+                    std::cout<<buf;
                     continue;
                 }
                 if (call_name == "IOds_println") {
+                    std::string buf="";
                     for (const auto& child : node->children) {
                         Value arg = evaluateExpression(child.get());
-                        std::cout << arg.to_string();
+                        buf+= arg.to_string();
                     }
-                    std::cout << "\n";
+                    std::cout <<buf<<"\n";
                     continue;
                 }
                 if (call_name == "IOes_print") {
+                    std::string buf="";
                     for (const auto& child : node->children) {
                         Value arg = evaluateExpression(child.get());
-                        std::cerr << arg.to_string();
+                        buf+=arg.to_string();
                     }
+                    std::cout<<buf;
                     continue;
                 }
                 if (call_name == "IOes_println") {
-                    for (const auto& child : node->children) {
+                    std::string buf="";
+for (const auto& child : node->children) {
                         Value arg = evaluateExpression(child.get());
-                        std::cerr << arg.to_string();
+                        buf += arg.to_string();
                     }
-                    std::cerr << "\n";
+                    std::cerr<<buf << "\n";
                     continue;
                 }
                 if (call_name == "tdebug") {

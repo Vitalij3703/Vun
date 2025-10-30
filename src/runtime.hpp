@@ -372,6 +372,10 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
 
             const std::string call_name = node->value;
 
+            if (call_name == "break"){
+                return Value(static_cast<std::int64_t>(3703)); // this wont restrict the user from returning the number 3703 in loops, right?
+            }
+
             if (call_name == "IOds_print") {
                 std::string buf="";
                 for (const auto& child : node->children) {
@@ -457,7 +461,12 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
             auto intv = times.as_int();
             auto &body = node->children;
             for(int i = 0; i<intv; i++){
-                run(body);
+                auto r = run(body);
+                if(r.has_value() && r->as_int() == static_cast<std::int64_t>(3703)){
+                    break;
+                } else if(r.has_value()) {
+                    return r;
+                }
             }
             continue;
         }

@@ -1,4 +1,4 @@
-tdebug();
+
 func int pow(int base, int exp){
     int result = 1;
     for(exp){
@@ -9,7 +9,7 @@ func int pow(int base, int exp){
 func int factorial(int num){
     int result = 1;
     int ptr = num+1;
-    for(num){
+    for(num-1){
         int result = result * ptr;
         int ptr = ptr - 1;
     }

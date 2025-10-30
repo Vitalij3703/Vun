@@ -33,7 +33,7 @@ namespace ast {
         virtual const bool is_str_lit() const { return false; }
         virtual const bool is_int_lit() const { return false; }
         virtual const bool is_bool_lit() const { return false; }
-        virtual std::unique_ptr<n> a() { return make_unique<n>(""); }
+        virtual n* a() { return nullptr; }
     };
 	// literal
     class lit : public n {
@@ -70,10 +70,10 @@ namespace ast {
 	// binary expr
     class ben : public n {
     public:
-        ben(std::unique_ptr<n> left, char op, std::unique_ptr<n> right, posit p = {})
+        ben(std::unique_ptr<n> left, std::string op, std::unique_ptr<n> right, posit p = {})
         : n("binaryop",
             make_vector(std::move(left), std::move(right)),
-            std::string(1, op),
+            op,
             p)
         {}
 
@@ -122,15 +122,14 @@ namespace ast {
     class ifn : public n {
     public:
         std::unique_ptr<n> condition;
+        std::vector<std::unique_ptr<n>> then_nodes;
 
-        ifn(std::unique_ptr<n> condition,
-            std::vector<std::unique_ptr<n>> body = {},
-            posit p = {})
-        : n("if", std::move(body), "", p),
-          condition(std::move(condition))
-        {
-            children.insert(children.begin(), std::move(this->condition));
-        }
+        ifn(std::unique_ptr<n> condition_, std::vector<std::unique_ptr<n>> then_block, posit p = {})
+          : then_nodes(std::move(then_block)), condition(std::move(condition_)),
+            n("if", std::move(then_block),std::string(""), p)
+        {}
+        virtual n* a() {return condition.get();}
+        
     };
 	// for
     class frn : public n {
@@ -138,9 +137,9 @@ namespace ast {
         std::unique_ptr<n> _t;
         std::vector<std::unique_ptr<n>> _b;
         frn(std::unique_ptr<n> times, std::vector<std::unique_ptr<n>> body, posit p = {})
-        : n("for", std::move(body), "", p), _t(std::move(times)) {}
+        : _t(std::move(times)), n("for", std::move(body), "", p) {}
         
-        virtual std::unique_ptr<n> a() {return std::move(_t);} // return the times
+        virtual n* a() {return _t.get();} // return the times
 
     };
 	// variable
@@ -165,4 +164,31 @@ namespace ast {
             : n("ref", {}, ref)
             {}
     };
+    // unary
+    class unary : public n {
+        public:
+            std::string op;
+            std::unique_ptr<n> right;
+            unary(std::string o, std::unique_ptr<n> r, posit p = {})
+              : op(std::move(o)),
+                right(nullptr),
+                n(
+                  "unary",
+                  [&]()->std::vector<std::unique_ptr<n>> {
+                      std::vector<std::unique_ptr<n>> tmp;
+                      tmp.push_back(std::move(r));
+                      return tmp;
+                  }(),
+                  op,
+                  p)
+            {}
+
+    };
+
 } 
+
+
+
+
+
+

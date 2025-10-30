@@ -10,7 +10,7 @@ using namespace std;
 enum token_type {
     IDEF, LPAREN, RPAREN, LBRACE, RBRACE, KEYW,
     STR, INT, DOT, COMMA,
-    EQUL, IS, DIV, MUL, MIN, PLU,
+    EQUL, IS, DIV, MUL, MIN, PLU, GRRT, LWR, LOE, GOE, NOT, OR, AND, LOUD, /* loud is !*/ NEQUL,
     SEMI, FE, _NULL
 };
 struct tok {
@@ -91,7 +91,7 @@ class lexer {
                 if (isalpha(cchar)){
                     // if current char is a letter and not a string, its either a keyword or an id
                     string id = id_build();
-                    if (id == "str" || id == "int" || id == "*import" || id == "if" || id == "for" || id == "func" || id == "return" || id == "void"){
+                    if (id == "str" || id == "int" || id == "null" || id == "if" || id == "for" || id == "func" || id == "return" || id == "void" || id == "true" || id == "false"){
                         tokens.push_back({token_type::KEYW, id});
                         
                     } else {
@@ -182,6 +182,43 @@ class lexer {
                     adv();
                     continue;
                 }
+                if (cchar == '<'){
+                    if(next() == '='){
+                        tokens.push_back({token_type::LOE, "<="});
+                        adv();
+                    }
+                    else {
+                        tokens.push_back({token_type::LWR, "<"});
+                        adv();
+                    }
+                    continue;
+                }
+                if (cchar == '>'){
+                    if(next() == '='){
+                        tokens.push_back({token_type::GOE, ">="});
+                        adv();
+                    }
+                    else {
+                        tokens.push_back({token_type::GRRT, ">"});
+                        adv();
+                    }
+                    continue;
+                }
+                if (cchar == '!'){
+                    tokens.push_back({token_type::NOT, "!"});
+                    adv();
+                    continue;
+                }
+                if (cchar == '|'){
+                    tokens.push_back({token_type::OR, "|"});adv();
+                    continue;
+                }
+                if (cchar == '&'){
+                    tokens.push_back({token_type::AND, "&"});adv();
+                    continue;
+                }
+                if(cchar == '!'){if(!(next() == '=')){ tokens.push_back({token_type::LOUD, "!"}); adv();} else { tokens.push_back({token_type::NEQUL, "!="});adv();}; continue;}
+
                 adv();
             }
             tokens.push_back({token_type::FE, "\0"});

@@ -1,0 +1,8 @@
+tdebug();
+int i = 6;
+if (i < 5){
+    IOds_println("i is below 5");
+}
+if (i > 5){
+    IOds_println("i is above 5");
+}

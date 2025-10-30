@@ -12,7 +12,7 @@
 using namespace std;
 
 // helper to print token enum names
-static std::string token_type_name(token_type t) {
+static string token_type_name(token_type t) {
     switch (t) {
         case IDEF: return "IDEF";
         case LPAREN: return "LPAREN";
@@ -32,6 +32,15 @@ static std::string token_type_name(token_type t) {
         case PLU: return "PLU";
         case SEMI: return "SEMI";
         case FE: return "FE";
+        case GRRT: return "GRRT";
+        case LWR: return "LWR";
+        case LOE: return "LOE";
+        case GOE: return "GOE";
+        case NOT: return "NOT";
+        case OR: return "OR";
+        case AND: return "AND";
+        case LOUD: return "LOUD";
+        case NEQUL: return "NEQUL";
         default: return "NULL";
     }
 }
@@ -41,7 +50,7 @@ private:
     vector<tok> input;
     size_t ipos = 0;
     tok ct;
-    std::string src;
+    string src;
 
 public:
     
@@ -96,7 +105,7 @@ public:
 
     bool consume(token_type expected_token, const string& expected_char) {
         if (match(expected_token, expected_char)) { adv(); return true; }
-        std::ostringstream oss;
+        ostringstream oss;
         oss << "expected token (" << token_type_name(expected_token)
             << " / \"" << expected_char << "\") but got (" << token_type_name(ct.type)
             << " / \"" << ct.value << "\") at ipos: " << ipos<<"\n";
@@ -104,25 +113,25 @@ public:
             oss << "\n";
             size_t pos = ipos < src.size() ? ipos : src.size();
             size_t start = pos > 30 ? pos - 30 : 0;
-            size_t end = std::min(src.size(), pos + 30);
-            oss << "reference: \"" << src.substr(start, end - start) << "\"\n";
-            oss << std::string((size_t) (ipos - start), ' ') << "^\n";
+            size_t end = min(src.size(), pos + 30);
+            oss << "ref: \"" << src.substr(start, end - start) << "\"\n";
+            oss << string((size_t) (ipos - start), ' ') << "^\n";
         }
         throw ParseError(oss.str());
     }
 
     bool consume(token_type expected_token) {
         if (match(expected_token)) { adv(); return true; }
-        std::ostringstream oss;
+        ostringstream oss;
         oss << "expected token (" << token_type_name(expected_token)
             << ") but got (" << token_type_name(ct.type) << " / \"" << ct.value << "\") at ipos: " << ipos<<"\n";
         if (!src.empty()) {
             oss << "\n";
             size_t pos = ipos < src.size() ? ipos : src.size();
             size_t start = pos > 30 ? pos - 30 : 0;
-            size_t end = std::min(src.size(), pos + 30);
-            oss << "reference: \"" << src.substr(start, end - start) << "\"\n";
-            oss << std::string((size_t) (ipos - start), ' ') << "^\n";
+            size_t end = min(src.size(), pos + 30);
+            oss << "ref: \"" << src.substr(start, end - start) << "\"\n";
+            oss << string((size_t) (ipos - start), ' ') << "^\n";
         }
         throw ParseError(oss.str());
     }
@@ -134,7 +143,7 @@ public:
         while (ct.type != token_type::FE){
             unique_ptr<ast::n> node = parse_stat();
             if (node){
-                nlist.push_back(std::move(node));
+                nlist.push_back(move(node));
             } else {
                 
                 throw ParseError("Nothing to parse.");
@@ -155,8 +164,9 @@ public:
                     adv(); 
                     auto expr = parse_expr();
                     consume(token_type::SEMI);
-                    return make_unique<ast::var>(name, std::move(expr), t);
+                    return make_unique<ast::var>(name, move(expr), t);
                 }
+                consume(token_type::SEMI);
                 return make_unique<ast::var>(name, unique_ptr<ast::n>(nullptr), t);
             }
         }
@@ -170,7 +180,12 @@ public:
         }
         else if (match(token_type::KEYW, "return")) return parse_fuck();
         else if (match(token_type::KEYW, "for")) return parse_for();
-        return parse_expr();
+        else if (match(token_type::KEYW, "if")) return parse_if();
+        {
+            auto e = parse_expr();
+            consume(token_type::SEMI);
+        return e;
+        }
     }
 
     unique_ptr<ast::n> parse_func(){
@@ -208,48 +223,48 @@ public:
             body.push_back(parse_stat());
         }
         consume(token_type::RBRACE);
-        return make_unique<ast::fn>(name, std::move(params), std::move(body));
+        return make_unique<ast::fn>(name, move(params), move(body));
     }
     unique_ptr<ast::n> parse_fuck() {
         consume(token_type::KEYW, "return");
         auto expr = parse_expr();
         consume(token_type::SEMI);
-        return make_unique<ast::n>("return", make_vector(std::move(expr)));
+        return make_unique<ast::n>("return", make_vector(move(expr)));
     }
-    std::unique_ptr<ast::n> parse_for() {
+    unique_ptr<ast::n> parse_for() {
         consume(token_type::KEYW, "for");
         consume(token_type::LPAREN);
-        std::unique_ptr<ast::n> times;
-        if (match(token_type::INT)) {
-            auto tmp = std::make_unique<ast::lit>(stoi(ct.value));
-            adv();
-            times = std::unique_ptr<ast::n>(std::move(tmp));
-        }
-        else if (match(token_type::IDEF)) {
-            auto tmp = std::make_unique<ast::ref>(ct.value);
-            adv();
-            times = std::unique_ptr<ast::n>(std::move(tmp));
-        }
-        else {
-            throw ParseError("expected integer or identifier in for(...)");
-        }
-
+        unique_ptr<ast::n> times = parse_expr();
         consume(token_type::RPAREN);
         consume(token_type::LBRACE);
 
-        std::vector<std::unique_ptr<ast::n>> body;
+        vector<unique_ptr<ast::n>> body;
         while (!match(token_type::RBRACE)) {
             auto stmt = parse_stat();
             if (!stmt) throw ParseError("invalid statement inside for body");
-            body.push_back(std::move(stmt));
+            body.push_back(move(stmt));
         }
         consume(token_type::RBRACE);
-        return std::make_unique<ast::frn>(std::move(times), std::move(body));
+        return make_unique<ast::frn>(move(times), move(body));
+    }
+
+    unique_ptr<ast::n> parse_if() {
+        consume(token_type::KEYW, "if");
+        consume(token_type::LPAREN);
+        auto condition = parse_expr();
+        consume(token_type::RPAREN);
+        consume(token_type::LBRACE);
+        vector<unique_ptr<ast::n>> b{};
+        while(!match(token_type::RBRACE)){
+            b.push_back(parse_stat());
+        }
+        consume(token_type::RBRACE);
+        return make_unique<ast::ifn>(std::move(condition), std::move(b));
     }
 
     static vector<unique_ptr<ast::n>> make_vector(unique_ptr<ast::n> node) {
         vector<unique_ptr<ast::n>> v;
-        v.push_back(std::move(node));
+        v.push_back(move(node));
         return v;
     }
     unique_ptr<ast::n> parse_call() {
@@ -265,49 +280,116 @@ public:
             } while (true);
         }
         consume(token_type::RPAREN);
-        return make_unique<ast::call>(func_name, std::move(args));
+        return make_unique<ast::call>(func_name, move(args));
+    }
+    
+    // top level
+    unique_ptr<ast::n> parse_expr() {
+        return parse_or();
     }
 
-    
-    unique_ptr<ast::n> parse_expr() {
+    unique_ptr<ast::n> parse_or() {
+        auto node = parse_and();
+        while (match(token_type::OR)) {
+            tok op = ct;
+            adv();
+            auto right = parse_and();
+            node = make_unique<ast::ben>(move(node), op.value, move(right));
+        }
+        return node;
+    }
+
+    // AND
+    unique_ptr<ast::n> parse_and() {
+        auto node = parse_equality();
+        while (match(token_type::AND)) {
+            tok op = ct;
+            adv();
+            auto right = parse_equality();
+            node = make_unique<ast::ben>(move(node), op.value, move(right));
+        }
+        return node;
+    }
+
+    // EQUL == !=
+    unique_ptr<ast::n> parse_equality() {
+        auto node = parse_comparison();
+        while (match(token_type::EQUL) || match(token_type::NEQUL)) {
+            tok op = ct;
+            adv();
+            auto right = parse_comparison();
+            node = make_unique<ast::ben>(move(node), op.value, move(right));
+        }
+        return node;
+    }
+
+    // comp > >= < <=
+    unique_ptr<ast::n> parse_comparison() {
         auto node = parse_term();
-        while (match(token_type::PLU) || match(token_type::MIN)) {
+        while (match(token_type::LWR) || match(token_type::LOE) ||
+               match(token_type::GRRT) || match(token_type::GOE)) {
             tok op = ct;
             adv();
             auto right = parse_term();
-            node = make_unique<ast::ben>(std::move(node), op.value[0], std::move(right));
+            node = make_unique<ast::ben>(move(node), op.value, move(right));
         }
         return node;
     }
 
     unique_ptr<ast::n> parse_term() {
         auto node = parse_fact();
-        while (match(token_type::MUL) || match(token_type::DIV)) {
+        while (match(token_type::PLU) || match(token_type::MIN)) {
             tok op = ct;
             adv();
             auto right = parse_fact();
-            node = make_unique<ast::ben>(std::move(node), op.value[0], std::move(right));
+            node = make_unique<ast::ben>(move(node), op.value, move(right));
         }
         return node;
     }
 
     unique_ptr<ast::n> parse_fact() {
+        auto node = parse_unary();
+        while (match(token_type::MUL) || match(token_type::DIV)) {
+            tok op = ct;
+            adv();
+            auto right = parse_unary();
+            node = make_unique<ast::ben>(move(node), op.value, move(right));
+        }
+        return node;
+    }
+
+    // unary operators: '!' and unary '-'
+    unique_ptr<ast::n> parse_unary() {
+        if (match(token_type::LOUD) || (match(token_type::MIN) && /* disambiguate unary minus? */ true)) {
+            tok op = ct;
+            adv();
+            auto right = parse_unary();
+            return make_unique<ast::unary>(op.value, std::move(right), posit(0,0));
+        }
+        return parse_primary();
+    }
+
+    unique_ptr<ast::n> parse_primary() {
         if (ct.type == token_type::INT) {
             int value = stoi(ct.value);
             adv();
             return make_unique<ast::lit>(value);
         } else if (ct.type == token_type::STR) {
-            
             string s = ct.value;
             adv();
             return make_unique<ast::lit>(s); 
+        } else if (match(token_type::KEYW, "true")) {
+            adv();
+            return make_unique<ast::lit>(true);
+        } else if (match(token_type::KEYW, "false")) {
+            adv();
+            return make_unique<ast::lit>(false);
         } else if (ct.type == token_type::LPAREN) {
             adv();
             auto node = parse_expr();
             consume(token_type::RPAREN);
             return node;
         } else if (ct.type == token_type::IDEF) {
-            
             if (ipos + 1 < input.size() && input[ipos+1].type == token_type::LPAREN) {
                 return parse_call();
             } else {
@@ -316,7 +398,8 @@ public:
                 return make_unique<ast::ref>(name); 
             }
         } else {
-            throw ParseError("Invalid expresion, pos is: "+to_string(ipos));
+            throw ParseError("unexcepted tok");
         }
     }
+
 };

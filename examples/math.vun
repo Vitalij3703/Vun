@@ -1,0 +1,19 @@
+tdebug();
+func int pow(int base, int exp){
+    int result = 1;
+    for(exp){
+        int result = result * base;
+    }
+    return result;
+}
+func int factorial(int num){
+    int result = 1;
+    int ptr = num+1;
+    for(num){
+        int result = result * ptr;
+        int ptr = ptr - 1;
+    }
+    return result;
+}
+IOds_println(factorial(5));
+IOds_println(pow(2, 3));

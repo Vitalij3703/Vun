@@ -1,7 +1,6 @@
 
-func void function(){
+func function(){
     IOds_println("Hello.");
-    IOds_println("Args don't work yet. I am working on that.");
     IOds_println("Vun is a tuff language, tuffer than java.");
 }
 function();

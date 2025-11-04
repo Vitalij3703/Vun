@@ -1,4 +1,4 @@
-func void test(int a){
+func test(int a){
     for(a){
         IOds_println("HEllo");
     }

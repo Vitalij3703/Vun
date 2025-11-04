@@ -1,12 +1,12 @@
 
-func int pow(int base, int exp){
+func pow(int base, int exp){
     int result = 1;
     for(exp){
         int result = result * base;
     }
     return result;
 }
-func int factorial(int num){
+func factorial(int num){
     int result = 1;
     int ptr = num+1;
     for(num-1){

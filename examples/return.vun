@@ -1,4 +1,4 @@
-func str return_self(str arg){
+func return_self(str arg){
     return arg;
 }
 str a = return_self("twin, vun is so niche and tuff");

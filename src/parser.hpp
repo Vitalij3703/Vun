@@ -189,11 +189,8 @@ public:
     }
 
     unique_ptr<ast::n> parse_func(){
+        // Removed return type-checking cuz it wasnt used
         consume(token_type::KEYW, "func");
-        if (!(match(token_type::KEYW, "str") || match(token_type::KEYW, "int") || match(token_type::KEYW, "void")))
-            throw ParseError("Expected return type.");
-        string ret_type = ct.value;
-        adv();
         if (!match(token_type::IDEF)) throw ParseError("Expected function name");
         string name = ct.value;
         adv();

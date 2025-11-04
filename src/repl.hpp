@@ -1,15 +1,21 @@
 #include "runtime.hpp"
+#include "parser.hpp"
 #include <iostream>
 #include <string>
 #include <cctype>
+#include <memory>
+#include <vector>
+#include "ast.hpp"
 
-const std::string VER = "indev02";
+const std::string VER = "indev03";
 
 void repl(){
-    std::cout<<"Vun - REPL\nVersion: "<<VER<<"\nNote: The input must contain the full program youll want to run";
-    while (true){
+    runtime rt("");
+    std::cout<<"Vun - REPL\nVersion: "<<VER<<"\n";
         std::string input;
         std::cout<<"$> ";std::cin >> input;
-        auto r = runtime(input);
-    }
+        parser a(input);
+        auto b = a.parse();
+        rt.run(b);
+        repl();
 }

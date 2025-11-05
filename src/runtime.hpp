@@ -316,7 +316,7 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
             const std::string call_name = node->value;
 
             if (call_name == "break"){
-                return Value((long long)9223372036854775807LL);
+                return Value(INT64_MAX);
             }
 
             if (call_name == "IOds_print") {
@@ -386,7 +386,7 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
             auto &body = node->children;
             for(int i = 0; i<intv; i++){
                 auto r = run(body);
-                if(r.has_value() && r->as_int() == 9223372036854775807LL){
+                if(r.has_value() && r->as_int() == INT64_MAX){
                     break;
                 } else if(r.has_value()) {
                     return r;

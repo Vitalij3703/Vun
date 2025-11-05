@@ -384,7 +384,7 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
             Value times = evaluateExpression(node->a());
             auto intv = times.as_int();
             auto &body = node->children;
-            if(body){
+            if(!body.empty()){
             for(int i = 0; i<intv; i++){
                 auto r = run(body);
                 if(r.has_value() && r->as_int() == INT64_MAX){
@@ -399,7 +399,7 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
             if (!node->children[0].get()) throw RuntimeError("If statement missing condition");
             Value cond = evaluateExpression(node->a());
             if (isTruthy(cond)) {
-if(body){
+if(!node->children.empty()){
                 run(node->children);}
             }
             continue;

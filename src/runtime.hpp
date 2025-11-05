@@ -316,7 +316,7 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
             const std::string call_name = node->value;
 
             if (call_name == "break"){
-                return Value(9223372036854775807LL);
+                return Value((long long)9223372036854775807LL);
             }
 
             if (call_name == "IOds_print") {

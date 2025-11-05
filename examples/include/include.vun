@@ -1,0 +1,2 @@
+include("a_lib.vl");
+IOds_println(a);

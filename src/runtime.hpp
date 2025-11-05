@@ -10,11 +10,10 @@
 #include <unordered_map>
 #include <optional>
 #include <sstream>
-#include <stdexcept>
 #include <variant>
 #include <cstdint>
-#include <fstream>
 #include <algorithm>
+#include "utils.hpp"
 
 std::vector<ast::n*> make_vec(ast::n* what){
     return {what};
@@ -24,61 +23,6 @@ std::vector<ast::n*> make_vec(ast::n* what){
 const std::string OPS[4] = {"+", "-", "*", "/"};
 
 bool debug = false;
-
-enum class ValType { INT, FLOAT, STR, BOOL, VOID };
-
-struct Value {
-    std::variant<std::int64_t, double, std::string, bool, std::monostate> v;
-    ValType tag; // the value type
-
-    Value() : v(std::monostate{}), tag(ValType::VOID) {}
-    Value(std::int64_t i) : v(i), tag(ValType::INT) {}
-    Value(double f) : v(f), tag(ValType::FLOAT) {}
-    Value(const std::string& s) : v(s), tag(ValType::STR) {}
-    Value(std::string&& s) : v(std::move(s)), tag(ValType::STR) {}
-    Value(const char* s) : v(std::string(s)), tag(ValType::STR) {}
-    Value(bool b) : v(b), tag(ValType::BOOL) {}
-    static Value Void() { return Value(); }
-
-    bool is_int() const   { return tag == ValType::INT; }
-    bool is_float() const { return tag == ValType::FLOAT; }
-    bool is_str() const   { return tag == ValType::STR; }
-    bool is_bool() const  { return tag == ValType::BOOL; }
-    bool is_void() const  { return tag == ValType::VOID; }
-
-    std::int64_t as_int() const {
-        if (is_int()) return std::get<std::int64_t>(v);
-        if (is_float()) return static_cast<std::int64_t>(std::get<double>(v));
-        if (is_bool()) return std::get<bool>(v) ? 1 : 0;
-        throw std::runtime_error("Value is not convertible to int");
-    }
-    double as_float() const {
-        if (is_float()) return std::get<double>(v);
-        if (is_int()) return static_cast<double>(std::get<std::int64_t>(v));
-        if (is_bool()) return std::get<bool>(v) ? 1.0 : 0.0;
-        throw std::runtime_error("Value is not convertible to float");
-    }
-    const std::string& as_str() const {
-        if (is_str()) return std::get<std::string>(v);
-        throw std::runtime_error("Value is not a string");
-    }
-    bool as_bool() const {
-        if (is_bool()) return std::get<bool>(v);
-        if (is_int()) return std::get<std::int64_t>(v) != 0;
-        if (is_float()) return std::get<double>(v) != 0.0;
-        throw std::runtime_error("Value is not convertible to bool");
-    }
-
-    std::string to_string() const {
-        std::ostringstream oss;
-        if (is_int()) oss << std::get<std::int64_t>(v);
-        else if (is_float()) oss << std::get<double>(v);
-        else if (is_str()) oss << std::get<std::string>(v);
-        else if (is_bool()) oss << (std::get<bool>(v) ? "true" : "false");
-        else oss << "";
-        return oss.str();
-    }
-};
 
 // apply arithmetics to a and b with the operator op
 Value apply_arith(const Value& a, const Value& b, char op) {
@@ -202,7 +146,6 @@ Value apply_binary(const Value& left, const Value& right, const std::string& op)
 class runtime {
     
 public:
-    // made these public for import
     std::vector<std::unique_ptr<ast::n>> nodesl;        // stores nodes
     std::unordered_map<std::string, Value> vars;        // stores variables
     std::unordered_map<std::string, ast::n*> functions; // stores functions
@@ -218,8 +161,8 @@ public:
 
         auto top_ret = run(nodesl);
         if (top_ret) {
-            // top-level return not allowed
-            throw RuntimeError("Return at top-level is not allowed");
+            auto v = top_ret.value();
+            throw RuntimeError("Program returned "+std::to_string(v.as_int()));
         }
     }
 
@@ -377,12 +320,7 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
             }
 
             if (call_name == "IOds_print") {
-                std::string buf="";
-                for (const auto& child : node->children) {
-                    Value arg = evaluateExpression(child.get());
-                    buf+=arg.to_string();
-                }
-                std::cout<<buf;
+                
                 continue;
             }
             if (call_name == "IOds_println") {
@@ -433,24 +371,10 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
                 std::cout << strbuf;
                 continue;
             }
-            if (call_name == "import"){
-                auto what = node->children[0].get();
-                //if(what->type == "lit"){
-                    std::string inp = evaluateExpression(what).as_str();
-                    std::ifstream f(inp);
-                    std::string buf;
-                    if(f.is_open()){
-                        std::string line;
-                        while(std::getline(f, line)){
-                            buf+=line;
-                        }
-                        parser ip(buf);
-                        std::vector<std::unique_ptr<ast::n>> nds = ip.parse();
-                        run(nds);
-                    } else {
-                        throw RuntimeError("Import doesnt exist");
-                    }
-                //} else {throw RuntimeError("Invalid import name");}
+            if (call_name == "include"){
+                auto what = gfc(evaluateExpression(node->children[0].get()).to_string());
+                auto a = parser(what).parse();
+                run(a);
             }
             // otherwise ignore returned Value (already handled if inside expression)
             continue;

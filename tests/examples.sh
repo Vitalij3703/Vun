@@ -11,3 +11,4 @@
 ../build/vun ../examples/print_var.vun
 ../build/vun ../examples/return.vun
 ../build/vun ../examples/var.vun
+../build/vun ../examples/include/include.vun

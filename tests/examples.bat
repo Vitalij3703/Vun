@@ -12,4 +12,8 @@ vun examples/math.vun
 vun examples/print_var.vun
 vun examples/return.vun
 vun examples/var.vun
+cd examples/include/
+vun include.vun
+cd ..
+cd ..
 cd tests

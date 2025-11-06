@@ -311,7 +311,7 @@ public:
     // EQUL == !=
     unique_ptr<ast::n> parse_equality() {
         auto node = parse_comparison();
-        while (match(token_type::EQUL) || match(token_type::NEQUL)) {
+        while (match(token_type::IS) || match(token_type::NEQUL)) {
             tok op = ct;
             adv();
             auto right = parse_comparison();

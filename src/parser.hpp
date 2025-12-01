@@ -154,7 +154,7 @@ public:
 
     
     unique_ptr<ast::n> parse_stat() {
-        if (match(token_type::KEYW, "int") || match(token_type::KEYW, "str")) {
+        if (match(token_type::KEYW, "int") || match(token_type::KEYW, "str") || match(token_type::KEYW, "float")) {
             auto t = ct.value;
             adv(); 
             if (match(token_type::IDEF)) {
@@ -369,6 +369,16 @@ public:
     unique_ptr<ast::n> parse_primary() {
         if (ct.type == token_type::INT) {
             int value = stoi(ct.value);
+            adv();
+            return make_unique<ast::lit>(value);
+        } else if(ct.type == token_type::FLOAT){
+            float value = stof(ct.value);
+            adv();
+            return make_unique<ast::lit>(value);
+        } else if(ct.type == token_type::BOOL){
+            bool value;
+            if(ct.value == "true") value = true;
+            if(ct.value == "false") value = false;
             adv();
             return make_unique<ast::lit>(value);
         } else if (ct.type == token_type::STR) {

@@ -5,11 +5,12 @@
 #include <vector>
 #include <string>
 #include <cctype>
+#include <cmath>
 
 using namespace std;
 enum token_type {
     IDEF, LPAREN, RPAREN, LBRACE, RBRACE, KEYW,
-    STR, INT, DOT, COMMA,
+    STR, INT, DOT, COMMA, FLOAT, BOOL,
     EQUL, IS, DIV, MUL, MIN, PLU, GRRT, LWR, LOE, GOE, NOT, OR, AND, LOUD, /* loud is !*/ NEQUL,
     SEMI, FE, _NULL
 };
@@ -73,13 +74,14 @@ class lexer {
             return result;
         }
         int num_build(){
-            // builds an int
+            // builds a number
             string result;
-            while (isdigit(cchar)){
+            while (isdigit(cchar) || cchar == '.' || cchar == '_'){
+                if(cchar == '_') adv();
                 result+=cchar;
                 adv();
             }
-            return stoi(result);
+            return stof(result);
         }
         vector<tok> tokenize(){
             // tokenizes input
@@ -91,12 +93,12 @@ class lexer {
                 if (isalpha(cchar)){
                     // if current char is a letter and not a string, its either a keyword or an id
                     string id = id_build();
-                    if (id == "str" || id == "int" || id == "null" || id == "if" || id == "for" || id == "func" || id == "return" || id == "void" || id == "true" || id == "false"){
+                    if (id == "str" || id == "int" || id == "null" || id == "if" || id == "for" || id == "func" || id == "return" || id == "void" || id == "bool" || id == "float"){
                         tokens.push_back({token_type::KEYW, id});
-                        
+                    } else if(id == "true" || id == "false"){
+                        tokens.push_back({token_type::BOOL, id});
                     } else {
                         tokens.push_back({token_type::IDEF, id});
-                        
                     }
                     continue;
                 }
@@ -127,8 +129,9 @@ class lexer {
                     continue;
                 }
                 if(isdigit(cchar)){
-                    int num = num_build();
-                    tokens.push_back({token_type::INT, to_string(num)});
+                    float num = num_build();
+                    if(floor(num) == num) tokens.push_back({token_type::INT, to_string(num)});
+                    else {tokens.push_back({token_type::FLOAT, to_string(num)});}
                     continue;
                 }
                 if(cchar == '.'){

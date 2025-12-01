@@ -33,14 +33,15 @@ namespace ast {
         virtual const bool is_str_lit() const { return false; }
         virtual const bool is_int_lit() const { return false; }
         virtual const bool is_bool_lit() const { return false; }
+        virtual const bool is_float_lit() const { return false; }
         virtual n* a() { return nullptr; }
     };
 	// literal
     class lit : public n {
     public:
-        std::variant<int, std::string, bool> literal;
+        std::variant<int, std::string, bool, float> literal;
 
-        explicit lit(std::variant<int, std::string, bool> v, posit p = {})
+        explicit lit(std::variant<int, std::string, bool, float> v, posit p = {})
         : n("literal", {}, "", p),
           literal(std::move(v))
         {
@@ -62,6 +63,12 @@ namespace ast {
         }
         const bool is_bool_lit() const override {
             if (std::holds_alternative<bool>(literal)){
+                return true;
+            }
+            return false;
+        }
+        const bool is_float_lit() const override {
+            if (std::holds_alternative<float>(literal)){
                 return true;
             }
             return false;

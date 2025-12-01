@@ -1,6 +1,0 @@
-
-func function(){
-    IOds_println("Hello.");
-    IOds_println("Vun is a tuff language, tuffer than java.");
-}
-function();

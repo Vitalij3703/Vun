@@ -39,14 +39,15 @@ namespace ast {
 	// literal
     class lit : public n {
     public:
-        std::variant<int, std::string, bool, float> literal;
+        std::variant<int, std::string, bool, double> literal;
 
-        explicit lit(std::variant<int, std::string, bool, float> v, posit p = {})
+        explicit lit(std::variant<int, std::string, bool, double> v, posit p = {})
         : n("literal", {}, "", p),
           literal(std::move(v))
         {
             if (std::holds_alternative<std::string>(literal)) value = std::get<std::string>(literal);
             else if (std::holds_alternative<int>(literal)) value = std::to_string(std::get<int>(literal));
+            else if (std::holds_alternative<double>(literal)) value = std::to_string(std::get<double>(literal));
             else value = std::get<bool>(literal) ? "true" : "false";
         }
         const bool is_str_lit() const override {
@@ -68,7 +69,7 @@ namespace ast {
             return false;
         }
         const bool is_float_lit() const override {
-            if (std::holds_alternative<float>(literal)){
+            if (std::holds_alternative<double>(literal)){
                 return true;
             }
             return false;
@@ -148,6 +149,16 @@ namespace ast {
         
         virtual n* a() {return _t.get();} // return the times
 
+    };
+    // while
+    class wn : public n {
+    public:
+        std::unique_ptr<n> _t;
+        std::vector<std::unique_ptr<n>> _b;
+        wn(std::unique_ptr<n> cond, std::vector<std::unique_ptr<n>> body, posit p = {})
+        : _t(std::move(cond)), n("while", std::move(body), "", p) {}
+        
+        virtual n* a() {return _t.get();}
     };
 	// variable
     class var : public n {

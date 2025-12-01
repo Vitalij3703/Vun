@@ -6,7 +6,25 @@
 #include <sstream>
 #include <fstream>
 
+std::string cettcc(const std::string& input) {
+    std::string output;
+    output.reserve(input.size());
 
+    for (size_t i = 0; i < input.size(); ++i) {
+        if (input[i] == '\\' && i + 1 < input.size()) {
+            switch (input[i + 1]) {
+                case 'n': output.push_back('\n'); ++i; break;
+                case 't': output.push_back('\t'); ++i; break;
+                case 'r': output.push_back('\r'); ++i; break;
+                case 'f': output.push_back('\f'); ++i; break;
+                default:  output.push_back(input[i]); break; // keep the backslash
+            }
+        } else {
+            output.push_back(input[i]);
+        }
+    }
+    return output;
+}
 
 Value::Value() : v(std::monostate{}), tag(ValType::VOID) {}
 Value::Value(std::int64_t i) : v(i), tag(ValType::INT) {}
@@ -15,6 +33,7 @@ Value::Value(const std::string& s) : v(s), tag(ValType::STR) {}
 Value::Value(std::string&& s) : v(std::move(s)), tag(ValType::STR) {}
 Value::Value(const char* s) : v(std::string(s)), tag(ValType::STR) {}
 Value::Value(bool b) : v(b), tag(ValType::BOOL) {}
+Value::Value(badidea i) : v(i), tag(ValType::B) {}
 
 Value Value::Void() { return Value(); }
 
@@ -35,7 +54,7 @@ double Value::as_float() const {
     if (is_float()) return std::get<double>(v);
     if (is_int()) return static_cast<double>(std::get<std::int64_t>(v));
     if (is_bool()) return std::get<bool>(v) ? 1.0 : 0.0;
-    throw RuntimeError("Value is not convertible to float");
+    throw RuntimeError("Value is not convertible to double");
 }
 
 const std::string& Value::as_str() const {
@@ -57,19 +76,29 @@ std::string Value::to_string() const {
     else if (is_str()) oss << std::get<std::string>(v);
     else if (is_bool()) oss << (std::get<bool>(v) ? "true" : "false");
     else oss << "";
-    return oss.str();
+    std::string a = oss.str();
+    return cettcc(oss.str());
 }
 
 
-std::string gfc(const string name){
-    if (name.size() < 3 || name.substr(name.size() - 3) != ".vl") {
-        throw RuntimeError("Wrong file extension in include. Expected .vl");
-    }
+
+std::string gfc(const string name, bool debug){
+    if (debug) std::cout<<"[DEBUG] Opening file, path: "<<name<<"\n";
     std::ifstream file(name);
     if (!file.is_open()) {
         throw RuntimeError("Couldnt open the file: " + name);
     }
     std::stringstream buffer;
     buffer << file.rdbuf();
+    if(debug) std::cout << "[DEBUG] gfc returned string of size " << buffer.str().size() << "\n";
     return buffer.str();
+}
+void outnode_d(ast::n* node){
+    std::cout << "[DEBUG] node.type: \""<<node->type<<"\" node.value: \""<<node->value<<"\" \nnode.children: \n";
+    for(auto& child : node->children) outnode_d(child.get());
+    std::cout<<"\n";
+}
+
+std::vector<ast::n*> make_vec(ast::n* what){
+    return {what};
 }

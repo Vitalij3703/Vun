@@ -1,4 +1,0 @@
-for(10){
-    IOds_println("Iteration");
-    break();
-}

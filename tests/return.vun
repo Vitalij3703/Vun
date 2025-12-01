@@ -2,4 +2,6 @@ func return_self(str arg){
     return arg;
 }
 str a = return_self("twin, vun is so niche and tuff");
-IOds_println(a, "; you: fr twin");
+println(a, "; you: fr twin");
+
+return "Program done";

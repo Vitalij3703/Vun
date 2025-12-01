@@ -11,13 +11,14 @@ using namespace std;
 enum token_type {
     IDEF, LPAREN, RPAREN, LBRACE, RBRACE, KEYW,
     STR, INT, DOT, COMMA, FLOAT, BOOL,
-    EQUL, IS, DIV, MUL, MIN, PLU, GRRT, LWR, LOE, GOE, NOT, OR, AND, LOUD, /* loud is !*/ NEQUL,
+    EQUL, IS, DIV, MUL, MIN, PLU, GRRT, LWR, LOE, GOE, NOT, OR, AND, LOUD, /* loud is !*/ NEQUL, MOD,
     SEMI, FE, _NULL
 };
 struct tok {
     enum token_type type;
     string value;
-    tok(enum token_type t, string v):type(t),value(v){}
+    unsigned long long pos;
+    tok(enum token_type t, string v, unsigned long long p):type(t),value(v), pos(p){}
     tok():type(token_type::_NULL), value(""){}
     tok(enum token_type t):type(t), value(""){}
 };
@@ -26,14 +27,14 @@ struct tok {
 class lexer {
     private:
         string inp;
-        int pos = 0;
+        long long unsigned int pos = 0;
         char cchar;
     public:
         lexer(string input){
             inp = input;
             cchar = inp[pos];
         }
-        int get_pos(){return pos;}
+        
         void adv(){
             if (pos < inp.size()){
                 pos+=1;
@@ -65,7 +66,7 @@ class lexer {
         string id_build(){
             // builds an id
             string result;
-            while (isalpha(cchar) || cchar == '_'){
+            while (isalpha(cchar) || cchar == '_' || isdigit(cchar)){
                 //cout << "making id, with " << cchar<<endl;
                 result+=cchar;
                 adv();
@@ -73,7 +74,7 @@ class lexer {
             
             return result;
         }
-        int num_build(){
+        double num_build(){
             // builds a number
             string result;
             while (isdigit(cchar) || cchar == '.' || cchar == '_'){
@@ -81,7 +82,7 @@ class lexer {
                 result+=cchar;
                 adv();
             }
-            return stof(result);
+            return stod(result);
         }
         vector<tok> tokenize(){
             // tokenizes input
@@ -93,138 +94,137 @@ class lexer {
                 if (isalpha(cchar)){
                     // if current char is a letter and not a string, its either a keyword or an id
                     string id = id_build();
-                    if (id == "str" || id == "int" || id == "null" || id == "if" || id == "for" || id == "func" || id == "return" || id == "void" || id == "bool" || id == "float"){
-                        tokens.push_back({token_type::KEYW, id});
+                    if (id == "str" || id == "int" || id == "nul" || id == "if" || id == "for" || id == "func" || id == "return" || id == "void" || id == "bool" || id == "float" || id == "while"){
+                        tokens.push_back({token_type::KEYW, id, pos});
                     } else if(id == "true" || id == "false"){
-                        tokens.push_back({token_type::BOOL, id});
+                        tokens.push_back({token_type::BOOL, id, pos});
                     } else {
-                        tokens.push_back({token_type::IDEF, id});
+                        tokens.push_back({token_type::IDEF, id, pos});
                     }
                     continue;
                 }
                 if(cchar == '('){
-                    tokens.push_back({token_type::LPAREN, "("});
+                    tokens.push_back({token_type::LPAREN, "(", pos});
                     adv();
                     continue;
                 }
                 if(cchar == ')'){
-                    tokens.push_back({token_type::RPAREN, ")"});
+                    tokens.push_back({token_type::RPAREN, ")", pos});
                     adv();
                     continue;
                 }
                 if(cchar == '{'){
-                    tokens.push_back({token_type::LBRACE, "{"});
+                    tokens.push_back({token_type::LBRACE, "{", pos});
                     adv();
                     continue;
                 }
                 if(cchar == '}'){
-                    tokens.push_back({token_type::RBRACE, "}"});
+                    tokens.push_back({token_type::RBRACE, "}", pos});
                     adv();
                     continue;
                 }
                 if(cchar == '"'){
                     string str = str_build();
-                    tokens.push_back({token_type::STR, str});
+                    tokens.push_back({token_type::STR, str, pos});
                     adv();
                     continue;
                 }
                 if(isdigit(cchar)){
-                    float num = num_build();
-                    if(floor(num) == num) tokens.push_back({token_type::INT, to_string(num)});
-                    else {tokens.push_back({token_type::FLOAT, to_string(num)});}
+                    double num = num_build();
+                    if(floor(num) == num) tokens.push_back({token_type::INT, to_string(static_cast<int>(num)), pos});
+                    else {tokens.push_back({token_type::FLOAT, to_string(num), pos});}
                     continue;
                 }
                 if(cchar == '.'){
-                    tokens.push_back({token_type::DOT});
+                    tokens.push_back({token_type::DOT, ".", pos});
                     adv();
                     continue;
                 }
                 if(cchar == '='){
                     if (next() == '='){
-                        tokens.push_back({token_type::IS, "=="});
+                        tokens.push_back({token_type::IS, "==", pos});
                         adv();
-                    } else {tokens.push_back({token_type::EQUL, "="});}
+                    } else {tokens.push_back({token_type::EQUL, "=", pos});}
                     adv();
                 }
                 if(cchar == '/'){
-                    tokens.push_back({token_type::DIV, "/"});
+                    tokens.push_back({token_type::DIV, "/", pos});
                     adv();
                     continue;
                 }
                 if(cchar == '*'){
-                    tokens.push_back({token_type::MUL, "*"});
+                    tokens.push_back({token_type::MUL, "*", pos});
                     adv();
                     continue;
                 }
+                if(cchar == '#'){
+                    // comments
+                    do {adv();}
+                    while(cchar!='#');
+		    adv();
+                    continue;
+                }
                 if(cchar == '-'){
-                    tokens.push_back({token_type::MIN, "-"});
+                    tokens.push_back({token_type::MIN, "-", pos});
                     adv();
                     continue;
                 }
                 if(cchar == '+'){
-                    tokens.push_back({token_type::PLU, "+"});
+                    tokens.push_back({token_type::PLU, "+", pos});
                     adv();
                     continue;
                 }
                 if (cchar == ',')
                 {
-                    tokens.push_back({token_type::COMMA, ","});
+                    tokens.push_back({token_type::COMMA, ",", pos});
                     adv();
                 }
                 
                 if(cchar == ';'){
-                    tokens.push_back({token_type::SEMI, ";"});
-                    adv();
-                    continue;
-                }
-                if (cchar == '/' && next() == '*'){
-                    // comments
-                    do {
-                        adv();
-                    } while(!(cchar == '*' && next() == '/' && next() != '\0'));
+                    tokens.push_back({token_type::SEMI, ";", pos});
                     adv();
                     continue;
                 }
                 if (cchar == '<'){
                     if(next() == '='){
-                        tokens.push_back({token_type::LOE, "<="});
+                        tokens.push_back({token_type::LOE, "<=", pos});
                         adv();
                     }
                     else {
-                        tokens.push_back({token_type::LWR, "<"});
+                        tokens.push_back({token_type::LWR, "<", pos});
                         adv();
                     }
                     continue;
                 }
                 if (cchar == '>'){
                     if(next() == '='){
-                        tokens.push_back({token_type::GOE, ">="});
+                        tokens.push_back({token_type::GOE, ">=", pos});
                         adv();
                     }
                     else {
-                        tokens.push_back({token_type::GRRT, ">"});
+                        tokens.push_back({token_type::GRRT, ">", pos});
                         adv();
                     }
                     continue;
                 }
                 if (cchar == '!'){
-                    tokens.push_back({token_type::NOT, "!"});
+                    tokens.push_back({token_type::NOT, "!", pos});
                     adv();
                     continue;
                 }
                 if (cchar == '|'){
-                    tokens.push_back({token_type::OR, "|"});adv();
+                    tokens.push_back({token_type::OR, "|", pos});adv();
                     continue;
                 }
                 if (cchar == '&'){
-                    tokens.push_back({token_type::AND, "&"});adv();
+                    tokens.push_back({token_type::AND, "&", pos});adv();
                     continue;
                 }
-                if(cchar == '!'){if(!(next() == '=')){ tokens.push_back({token_type::LOUD, "!"}); adv();} else { tokens.push_back({token_type::NEQUL, "!="});adv();}; continue;}
-
+                if(cchar == '!'){if(!(next() == '=')){ tokens.push_back({token_type::LOUD, "!", pos}); adv();} else { tokens.push_back({token_type::NEQUL, "!=", pos});adv();}; continue;}
+                if(cchar == '%'){tokens.push_back({token_type::MOD, "%", pos});continue;}
                 adv();
             }
-            tokens.push_back({token_type::FE, "\0"});
+            tokens.push_back({token_type::FE, "\0", pos});
             return tokens;
         }
 

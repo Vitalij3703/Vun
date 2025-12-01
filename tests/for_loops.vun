@@ -1,6 +1,6 @@
 func test(int a){
     for(a){
-        IOds_println("HEllo");
+        println("HEllo");
     }
 }
 test(67);

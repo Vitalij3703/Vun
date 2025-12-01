@@ -1,0 +1,4 @@
+tdebug();
+include("std.math.vl");
+println(factorial(5));
+println(pow(5, 2));

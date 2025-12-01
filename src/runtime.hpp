@@ -14,13 +14,12 @@
 #include <cstdint>
 #include <algorithm>
 #include "utils.hpp"
-
-std::vector<ast::n*> make_vec(ast::n* what){
-    return {what};
-}
+#include <filesystem>
 
 
-const std::string OPS[4] = {"+", "-", "*", "/"};
+
+
+const std::string OPS[4] = {"+", "-", "*", "/"}; // arithmetic operators
 
 bool debug = false;
 
@@ -35,9 +34,9 @@ Value apply_arith(const Value& a, const Value& b, char op) {
     bool promotes_to_float = (a.is_float() || b.is_float() || op == '/');
 
     if (promotes_to_float) {
-        double af = a.as_float();
-        double bf = b.as_float();
-        double res;
+        float af = a.as_float();
+        float bf = b.as_float();
+        float res;
         switch (op) {
             case '+': res = af + bf; break;
             case '-': res = af - bf; break;
@@ -45,7 +44,8 @@ Value apply_arith(const Value& a, const Value& b, char op) {
             case '/':
                 if (bf == 0.0) throw RuntimeError("Division by zero");
                 res = af / bf; break;
-            default: throw ParseError(std::string("Unknown binary operator: ") + op);
+            
+            default: throw RuntimeError(std::string("Unknown binary operator: ") + op);
         }
         return Value(res);
     } else {
@@ -58,7 +58,9 @@ Value apply_arith(const Value& a, const Value& b, char op) {
             case '/':
                 if (bi == 0) throw RuntimeError("Division by zero");
                 return Value(ai / bi);
-            default: throw ParseError(std::string("Unknown binary operator: ") + op);
+            case '%':
+                return Value(ai%bi);
+            default: throw RuntimeError(std::string("Unknown binary operator: ") + op);
         }
     }
 }
@@ -93,20 +95,55 @@ bool equalValues(const Value& a, const Value& b) {
 }
 
 int compareValues(const Value& a, const Value& b) {
-    // compatability my ass
-    if ((a.is_int()) && (b.is_int())) {
+    if (a.is_int() && b.is_int()) {
         auto ad = a.as_int();
         auto bd = b.as_int();
         if (ad < bd) return -1;
         if (ad > bd) return 1;
         return 0;
     }
-
+    if (a.is_float() && b.is_float()) {
+        auto ad = a.as_float();
+        auto bd = b.as_float();
+        if (ad < bd) return -1;
+        if (ad > bd) return 1;
+        return 0;
+    }
     if (a.is_str() && b.is_str()) {
         if (a.as_str() < b.as_str()) return -1;
         if (a.as_str() > b.as_str()) return 1;
         return 0;
     }
+    if (a.is_bool() && b.is_bool()) {
+        bool ad = a.as_bool();
+        bool bd = b.as_bool();
+        if (ad == bd) return 0;
+        return ad ? 1 : -1;
+    }
+
+    if ((a.is_int() && b.is_float()) || (a.is_float() && b.is_int())) {
+        double ad = a.is_int() ? static_cast<double>(a.as_int()) : a.as_float();
+        double bd = b.is_int() ? static_cast<double>(b.as_int()) : b.as_float();
+        if (ad < bd) return -1;
+        if (ad > bd) return 1;
+        return 0;
+    }
+
+    if (a.is_bool() && (b.is_int() || b.is_float())) {
+        double ad = a.as_bool() ? 1.0 : 0.0;
+        double bd = b.is_int() ? static_cast<double>(b.as_int()) : b.as_float();
+        if (ad < bd) return -1;
+        if (ad > bd) return 1;
+        return 0;
+    }
+    if (b.is_bool() && (a.is_int() || a.is_float())) {
+        double bd = b.as_bool() ? 1.0 : 0.0;
+        double ad = a.is_int() ? static_cast<double>(a.as_int()) : a.as_float();
+        if (ad < bd) return -1;
+        if (ad > bd) return 1;
+        return 0;
+    }
+
     throw RuntimeError("Cannot compare incompatible types");
 }
 
@@ -131,7 +168,7 @@ Value apply_binary(const Value& left, const Value& right, const std::string& op)
 
     if (op.size() == 1) {
         char c = op[0];
-        if (c == '+' || c == '-' || c == '*' || c == '/') {
+        if (c == '+' || c == '-' || c == '*' || c == '/' || c == '%') {
             return apply_arith(left, right, c);
         }
     }
@@ -146,23 +183,31 @@ Value apply_binary(const Value& left, const Value& right, const std::string& op)
 class runtime {
     
 public:
-    std::vector<std::unique_ptr<ast::n>> nodesl;        // stores nodes
-    std::unordered_map<std::string, Value> vars;        // stores variables
-    std::unordered_map<std::string, ast::n*> functions; // stores functions
-    std::string strbuf = "";                            // stores the strbuf
+    std::vector<std::unique_ptr<ast::n>> nodesl;                         // stores nodes
+    std::vector<std::unique_ptr<ast::n>> global_nodes;                   // stores whatever, if it works it works
+    std::unordered_map<std::string, Value> vars;                         // stores variables
+    std::unordered_map<std::string, ast::fn*> functions;                 // stores functions
+    std::string strbuf = "";                                             // stores the strbuf
+    std::string fnamee;
 
 
-
-    runtime(const std::string& in) {
-        parser p(in);
+    runtime(const std::string& in, std::string fabspath) {
+        fnamee = fabspath;
+        parser p(in, debug);
         if (debug) std::cout << "[DEBUG] input size: " << in.size() << "\n";
         nodesl = p.parse();
         if (debug) std::cout << "[DEBUG] parsed nodes count: " << nodesl.size() << "\n";
 
-        auto top_ret = run(nodesl);
-        if (top_ret) {
-            auto v = top_ret.value();
-            throw RuntimeError("Program returned "+std::to_string(v.as_int()));
+        if (debug){
+            for(auto& node : nodesl) outnode_d(node.get());
+        }
+
+        if(!nodesl.empty()){
+            auto top_ret = run(nodesl, false);
+            if (top_ret) {
+                auto v = top_ret.value();
+                throw RuntimeInfo("Program returned "+v.to_string());
+            }
         }
     }
 
@@ -176,12 +221,12 @@ public:
         if (std::holds_alternative<int>(litnode->literal)) {
             int v = std::get<int>(litnode->literal);
             return Value(static_cast<std::int64_t>(v));
-        /*} else if (std::holds_alternative<float>(litnode->literal)) {
-            return Value(0.00f);*/
         } else if (std::holds_alternative<std::string>(litnode->literal)) {
             return Value(std::get<std::string>(litnode->literal));
         } else if (std::holds_alternative<bool>(litnode->literal)) {
             return Value(std::get<bool>(litnode->literal));
+        } else if (std::holds_alternative<double>(litnode->literal)){
+            return Value(std::get<double>(litnode->literal));
         } else {
             return Value::Void();
         }
@@ -193,7 +238,6 @@ public:
 
         std::string op = node->value;
 
-        // short-circuit logic handled here (keeps operand-return semantics)
         if (op == "|") {
             Value left = evaluateExpression(node->children[0].get());
             if (isTruthy(left)) return left;
@@ -228,6 +272,9 @@ public:
     if (node->type == "ref") {
         auto it = vars.find(node->value);
         if (it == vars.end()) throw RuntimeError("Unknown variable: " + node->value);
+        if(it->second.tag == ValType::VOID){
+            throw RuntimeError("Variable '"+node->value+"' doesnt have a value yet it got referenced");
+        }
         return it->second;
     }
 
@@ -236,6 +283,20 @@ public:
         for (const auto& child : node->children) arg_vals.push_back(evaluateExpression(child.get()));
 
         const std::string call_name = node->value;
+        if(debug) std::cout<<"[DEBUG] tryna call function called "+call_name+"\n";
+        if (call_name == "isset") {
+            if (node->children.size() < 1) throw RuntimeError("isset expects 1 argument");
+            ast::n* first_child = node->children[0].get();
+            if (first_child->type == "ref") {
+                const std::string& name = first_child->value;
+                return vars.find(name) != vars.end();
+            } else if (!arg_vals.empty()) {
+                if (arg_vals[0].is_str()) {
+                    return vars.find(arg_vals[0].as_str()) != vars.end();
+                }
+            }
+            return false;
+        }
         auto it_fn = functions.find(call_name);
         if (it_fn != functions.end()) {
             ast::n* fn_node = it_fn->second;
@@ -244,7 +305,6 @@ public:
             auto& params = *params_ptr;
             if (params.size() != arg_vals.size()) throw RuntimeError("Argument count mismatch when calling function '" + call_name + "'");
 
-            // save global scope
             auto old_vars = vars;
             auto old_functions = functions;
 
@@ -253,13 +313,13 @@ public:
                 vars.insert_or_assign(param_name, arg_vals[i]);
             }
 
-            auto ret = run(fn_node->children);
+            auto ret = run(fn_node->children,false);
 
-            // restore global scope
+            std::optional<Value> ret_copy;
+            if (ret) ret_copy = *ret;
             vars = std::move(old_vars);
-            functions = std::move(old_functions);
-
-            if (ret) return *ret;
+            functions = old_functions;
+            if (ret_copy) return *ret_copy;
             return Value::Void();
         }
 
@@ -269,17 +329,21 @@ public:
     throw RuntimeError("Unsupported node type in expression: " + node->type);
 }
 
-std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
+std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes, bool inc) {
     if (nodes.empty()) {
         if (debug) std::cout << "[DEBUG] input empty\n";
         return std::nullopt;
     }
     std::size_t i = 0;
-    for (const auto& node : nodes) {
+    for (auto& nde : nodes) {
         i++;
+        ast::n* node = nde.get();
+        if(inc) global_nodes.push_back(std::move(nde));
         if (!node) continue;
 
         if (debug) std::cout << "[DEBUG] node.type: \"" << node->type << "\" node.value: \"" << node->value << "\"\n";
+
+        
 
         if (node->type == "var") {
             std::string varname = node->value;
@@ -287,15 +351,13 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
                 Value assigned = evaluateExpression(node->children[0].get());
                 vars.insert_or_assign(varname, assigned);
                 if (debug) std::cout << "[DEBUG] assigned var '" << varname << "' = " << assigned.to_string() << "\n";
-            } else {
-                throw RuntimeError("Variable \"" + varname + "\" declared without initializer");
             }
             continue;
         }
 
         if (node->type == "function") {
             if (debug) std::cout<<"[DEBUG] processing function \""<< node->value <<"\""<<"\n";
-            functions.insert_or_assign(node->value, node.get());
+            functions.insert_or_assign(node->value, dynamic_cast<ast::fn*>(node));
             continue;
         }
 
@@ -310,52 +372,39 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
         }
 
         if (node->type == "call") {
-            // evaluate the call (value will be discarded if call used as statement)
-            Value v = evaluateExpression(node.get());
+            if (debug) std::cout << "[DEBUG] calling: " << node->value
+                    << " function count=" << (functions.count(node->value) ? "1" : "0")
+                    << " children=" << node->children.size() << "\n";
 
             const std::string call_name = node->value;
 
             if (call_name == "break"){
-                return Value(INT64_MAX);
+                return Value(badidea(true));
             }
 
-            if (call_name == "IOds_print") {
-                
+            if (call_name == "print") {
+                std::cout<<evaluateExpression(node->children[0].get()).to_string();
                 continue;
             }
-            if (call_name == "IOds_println") {
-                std::string buf="";
-                for (const auto& child : node->children) {
-                    Value arg = evaluateExpression(child.get());
-                    buf+= arg.to_string();
-                }
-                std::cout <<buf<<"\n";
+            if (call_name == "println") {
+                std::cout<<evaluateExpression(node->children[0].get()).to_string()<<std::endl;
                 continue;
             }
-            if (call_name == "IOes_print") {
-                std::string buf="";
-                for (const auto& child : node->children) {
-                    Value arg = evaluateExpression(child.get());
-                    buf+=arg.to_string();
-                }
-                std::cout<<buf;
+            if (call_name == "error") {
+                std::cerr<<evaluateExpression(node->children[0].get()).to_string();
                 continue;
             }
-            if (call_name == "IOes_println") {
-                std::string buf="";
-                for (const auto& child : node->children) {
-                    Value arg = evaluateExpression(child.get());
-                    buf += arg.to_string();
-                }
-                std::cerr<<buf << "\n";
+            if (call_name == "errorln") {
+                std::cerr<<evaluateExpression(node->children[0].get()).to_string()<<std::endl;
                 continue;
             }
             if (call_name == "tdebug") {
+                std::cout << "[DEBUG] Debugging mode on.\n";
                 debug = !debug;
                 continue;
             }
             if (call_name == "eval"){
-                run(node->children);
+                run(node->children, false);
                 continue;
             }
             if (call_name == "strbuf_add"){
@@ -372,11 +421,18 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
                 continue;
             }
             if (call_name == "include"){
-                auto what = gfc(evaluateExpression(node->children[0].get()).to_string());
-                auto a = parser(what).parse();
-                run(a);
+                auto what = evaluateExpression(node->children[0].get()).to_string();
+                std::string wha = what;
+                if(what.starts_with("std.")){
+                    std::filesystem::path p = std::filesystem::absolute(__FILE__).parent_path().parent_path()/"std"/what;
+                    wha = gfc(p.string(), debug);
+                }
+                else {wha = gfc(what, debug);}
+                auto a = parser(wha, debug).parse();
+                run(a, true);
+                continue;
             }
-            // otherwise ignore returned Value (already handled if inside expression)
+            Value v = evaluateExpression(node);
             continue;
         }
         if (node->type == "for"){
@@ -386,8 +442,8 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
             auto &body = node->children;
             if(!body.empty()){
             for(int i = 0; i<intv; i++){
-                auto r = run(body);
-                if(r.has_value() && r->as_int() == INT64_MAX){
+                auto r = run(body, false);
+                if(r.has_value() && r->tag == ValType::B){
                     break;
                 } else if(r.has_value()) {
                     return r;
@@ -397,14 +453,15 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes) {
         }
         if (node->type == "if") {
             if (!node->children[0].get()) throw RuntimeError("If statement missing condition");
+            if(debug) std::cout<<"[DEBUG] registering if statament: before condition\n";
             Value cond = evaluateExpression(node->a());
-            if (isTruthy(cond)) {
-if(!node->children.empty()){
-                run(node->children);}
-            }
+            if(debug) std::cout<<"[DEBUG] registering if statament: after condition\n";
+            if (cond.as_bool()) {
+                if(!node->children.empty()){
+                    run(node->children, false);}
+                }
             continue;
         }
-
     }
 
     return std::nullopt;

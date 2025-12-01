@@ -54,13 +54,13 @@ private:
 
 public:
     
-    parser(string in):src(in) {
+    parser(string in, bool debug):src(in) {
         lexer l = lexer(in);
         this->input = l.tokenize();
-        /*cout << "[-----Token dump-----]\n";
+        if(debug){cout << "[-----Token dump-----]\n";
         for(int i=0;i<size(input); i++){
             cout << to_string(i) <<": "<<token_type_name(input[i].type)<<"("<<input[i].value<<")"<<"\n";
-        }*/
+        }}
 
 
         if (input.empty()) throw ParseError("Either, input empty or the lexer's at failure."); 
@@ -95,7 +95,7 @@ public:
     bool match_next(token_type expected_token, const string& expected_char) {
         if (ipos + 1 >= input.size()) return false;
         const tok &t = input[ipos + 1];
-        return t.type == expected_token && t.value == expected_char;
+            return t.type == expected_token && t.value == expected_char;
     }
 
     bool match_next(token_type expected_token) {
@@ -103,40 +103,103 @@ public:
         return input[ipos + 1].type == expected_token;
     }
 
-    bool consume(token_type expected_token, const string& expected_char) {
+    bool consume(token_type expected_token, const std::string& expected_char) {
         if (match(expected_token, expected_char)) { adv(); return true; }
-        ostringstream oss;
-        oss << "expected token (" << token_type_name(expected_token)
-            << " / \"" << expected_char << "\") but got (" << token_type_name(ct.type)
-            << " / \"" << ct.value << "\") at ipos: " << ipos<<"\n";
-        if (!src.empty()) {
-            oss << "\n";
-            size_t pos = ipos < src.size() ? ipos : src.size();
-            size_t start = pos > 30 ? pos - 30 : 0;
-            size_t end = min(src.size(), pos + 30);
-            oss << "ref: \"" << src.substr(start, end - start) << "\"\n";
-            oss << string((size_t) (ipos - start), ' ') << "^\n";
+
+        std::ostringstream oss;
+        size_t pos = 0;
+        pos = ct.pos;
+        int line = 1;
+        int col  = 1;
+        for (size_t i = 0; i < pos && i < src.size(); ++i) {
+            if (src[i] == '\n') { ++line; col = 1; }
+            else ++col;
         }
+        size_t line_start = (pos < src.size()) ? src.rfind('\n', pos) : src.rfind('\n', src.size() - 1);
+        if (line_start == std::string::npos) line_start = 0; else line_start += 1;
+        size_t line_end = (pos < src.size()) ? src.find('\n', pos) : src.find('\n', src.size());
+        if (line_end == std::string::npos) line_end = src.size();
+
+        std::string line_text;
+        if (!src.empty() && line_start < line_end) {
+            line_text = src.substr(line_start, line_end - line_start);
+        }
+        size_t tok_len = ct.value.size();
+        oss << "expected token (" << token_type_name(expected_token)
+            << " / \"" << expected_char << "\") but got ("
+            << token_type_name(ct.type) << " / \"" << ct.value << "\")";
+        oss << " at line " << line << ", column " << col << "\n";
+        if (!line_text.empty()) {
+            oss << "line:    " << line_text << "\n";
+            oss << "         ";
+            int caret_col = std::max(1, col);
+            for (int s = 1; s < caret_col; ++s) {
+                oss << ' ';
+            }
+            size_t max_span = line_text.size() >= static_cast<size_t>(caret_col - 1)
+                              ? std::min(tok_len, line_text.size() - (caret_col - 1))
+                              : 1;
+            for (size_t k = 0; k < max_span; ++k) oss << '^';
+            oss << "\n";
+        } else if (!src.empty()) {
+            oss << "(source available but could not extract line around pos " << pos << ")\n";
+        }
+
+        if (!src.empty()) oss << "\n^^^^^^^^^^^^^^^^^^^^^^\n";
+
         throw ParseError(oss.str());
     }
 
     bool consume(token_type expected_token) {
         if (match(expected_token)) { adv(); return true; }
-        ostringstream oss;
-        oss << "expected token (" << token_type_name(expected_token)
-            << ") but got (" << token_type_name(ct.type) << " / \"" << ct.value << "\") at ipos: " << ipos<<"\n";
-        if (!src.empty()) {
-            oss << "\n";
-            size_t pos = ipos < src.size() ? ipos : src.size();
-            size_t start = pos > 30 ? pos - 30 : 0;
-            size_t end = min(src.size(), pos + 30);
-            oss << "ref: \"" << src.substr(start, end - start) << "\"\n";
-            oss << string((size_t) (ipos - start), ' ') << "^\n";
+
+        std::ostringstream oss;
+
+        size_t pos = 0;
+        pos = ct.pos;
+
+        int line = 1;
+        int col  = 1;
+        for (size_t i = 0; i < pos && i < src.size(); ++i) {
+            if (src[i] == '\n') { ++line; col = 1; }
+            else ++col;
         }
+
+        size_t line_start = (pos < src.size()) ? src.rfind('\n', pos) : src.rfind('\n', src.size() - 1);
+        if (line_start == std::string::npos) line_start = 0; else line_start += 1;
+        size_t line_end = (pos < src.size()) ? src.find('\n', pos) : src.find('\n', src.size());
+        if (line_end == std::string::npos) line_end = src.size();
+
+        std::string line_text;
+        if (!src.empty() && line_start < line_end) {
+            line_text = src.substr(line_start, line_end - line_start);
+        }
+
+        size_t tok_len = std::max<size_t>(1, ct.value.size());
+
+        oss << "expected token (" << token_type_name(expected_token)
+            << ") but got (" << token_type_name(ct.type)
+            << " / \"" << ct.value << "\")";
+        oss << " at line " << line << ", column " << col << "\n";
+
+        if (!line_text.empty()) {
+            oss << "line:    " << line_text << "\n";
+            oss << "         ";
+            int caret_col = std::max(1, col);
+            for (int s = 1; s < caret_col; ++s) oss << ' ';
+            size_t max_span = line_text.size() >= static_cast<size_t>(caret_col - 1)
+                              ? std::min(tok_len, line_text.size() - (caret_col - 1))
+                              : 1;
+            for (size_t k = 0; k < max_span; ++k) oss << '^';
+            oss << "\n";
+        } else if (!src.empty()) {
+            oss << "(source available but could not extract line around pos " << pos << ")\n";
+        }
+
+        if (!src.empty()) oss << "\n^^^^^^^^^^^^^^^^^^^^^^\n";
+
         throw ParseError(oss.str());
     }
-
-
 
     vector<unique_ptr<ast::n>> parse() {
         vector<unique_ptr<ast::n>> nlist;
@@ -144,9 +207,6 @@ public:
             unique_ptr<ast::n> node = parse_stat();
             if (node){
                 nlist.push_back(move(node));
-            } else {
-                
-                throw ParseError("Nothing to parse.");
             }
         }
         return nlist;
@@ -154,7 +214,7 @@ public:
 
     
     unique_ptr<ast::n> parse_stat() {
-        if (match(token_type::KEYW, "int") || match(token_type::KEYW, "str") || match(token_type::KEYW, "float")) {
+        if (match(token_type::KEYW, "int") || match(token_type::KEYW, "str") || match(token_type::KEYW, "float") || match(token_type::KEYW, "bool")) {
             auto t = ct.value;
             adv(); 
             if (match(token_type::IDEF)) {
@@ -175,9 +235,7 @@ public:
             consume(token_type::SEMI);
             return call;
         }
-        else if (match(token_type::KEYW, "func")){
-            return parse_func();
-        }
+        else if (match(token_type::KEYW, "func")) return parse_func();
         else if (match(token_type::KEYW, "return")) return parse_fuck();
         else if (match(token_type::KEYW, "for")) return parse_for();
         else if (match(token_type::KEYW, "if")) return parse_if();
@@ -201,7 +259,7 @@ public:
         if (!match(token_type::RPAREN)) {
             do {
                 string type_buf, name_buf;
-                if (!(match(token_type::KEYW, "int") || match(token_type::KEYW, "str")))
+                if (!(match(token_type::KEYW, "int") || match(token_type::KEYW, "str") || match(token_type::KEYW, "float") || match(token_type::KEYW, "bool")))
                     throw ParseError("Expected parameter type.");
                 type_buf = ct.value;
                 adv();
@@ -346,7 +404,7 @@ public:
 
     unique_ptr<ast::n> parse_fact() {
         auto node = parse_unary();
-        while (match(token_type::MUL) || match(token_type::DIV)) {
+        while (match(token_type::MUL) || match(token_type::DIV) || match(token_type::MOD)) {
             tok op = ct;
             adv();
             auto right = parse_unary();
@@ -372,7 +430,7 @@ public:
             adv();
             return make_unique<ast::lit>(value);
         } else if(ct.type == token_type::FLOAT){
-            float value = stof(ct.value);
+            float value = stod(ct.value);
             adv();
             return make_unique<ast::lit>(value);
         } else if(ct.type == token_type::BOOL){

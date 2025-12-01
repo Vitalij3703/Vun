@@ -1,4 +1,4 @@
 func greet(str arg){
-    IOds_print(arg);
+    print(arg);
 }
 greet("twin, gothic might find us if we wont stay niche.");

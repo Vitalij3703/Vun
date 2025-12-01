@@ -15,3 +15,9 @@ class RuntimeError {
         cerr << "\033[1;31mRuntimeError:\n\t"<<text<<"\033[0m\n"<<endl;
     }
 };
+class RuntimeInfo {
+    public:
+    RuntimeInfo(string text){
+        cerr << "\033[1;36m\n"<<text<<"\033[0m"<<endl;
+    }
+};

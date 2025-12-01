@@ -1,17 +1,21 @@
-// Vun api
+// eofhuoluzdyhgfjruujy
 #pragma once
 #include <cstdint>
 #include <variant>
 #include <string>
 #include "ast.hpp"
 
+struct badidea {
+    bool yes;
+    badidea(bool yon) : yes(yon){}
+};
+
 // The enum for types of values
-enum class ValType { INT, FLOAT, STR, BOOL, VOID };
+enum class ValType { INT, FLOAT, STR, BOOL, VOID, B };
 
 // The value struct used for values (obviously)
-
 struct Value {
-    std::variant<std::int64_t, double, std::string, bool, std::monostate> v;
+    std::variant<std::int64_t, double, std::string, bool, std::monostate, badidea> v;
     ValType tag;
 
     Value();
@@ -21,6 +25,7 @@ struct Value {
     Value(std::string&& s);
     Value(const char* s);
     Value(bool b);
+    Value(badidea i);
     static Value Void();
 
     bool is_int() const;
@@ -37,5 +42,11 @@ struct Value {
     std::string to_string() const;
 };
 
-// get the code of a file
-std::string gfc(const string name);
+// get the contents of a library file
+std::string gfc(const string name, bool debug);
+
+void outnode_d(ast::n* node);
+std::vector<ast::n*> make_vec(ast::n* what);
+
+// convert escapes to their corresponding characters
+std::string cettcc(const std::string& input);

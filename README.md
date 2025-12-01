@@ -9,5 +9,6 @@ then<br>
 then<br>
 <code>cmake -S . -B build/</code><br>
 in your terminal (errors may occur, if so report any to my email: v67010168@gmail.com, or fix them yourself.)<br>
+<p>Note: include() may break if you remove the src folder</p>
 
 

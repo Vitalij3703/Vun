@@ -1,0 +1,6 @@
+
+func function(){
+    println("Hello.");
+    println("Vun is a tuff language, tuffer than java.");
+}
+function();

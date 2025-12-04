@@ -1,5 +1,0 @@
-tdebug();
-
-include("std.random.vl");
-
-println(randrange(0, 25));

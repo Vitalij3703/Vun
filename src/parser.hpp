@@ -192,10 +192,7 @@ public:
                               : 1;
             for (size_t k = 0; k < max_span; ++k) oss << '^';
             oss << "\n";
-        } else if (!src.empty()) {
-            oss << "(source available but could not extract line around pos " << pos << ")\n";
         }
-
         if (!src.empty()) oss << "\n^^^^^^^^^^^^^^^^^^^^^^\n";
 
         throw ParseError(oss.str());
@@ -214,8 +211,9 @@ public:
 
     
     unique_ptr<ast::n> parse_stat() {
-        if (match(token_type::KEYW, "int") || match(token_type::KEYW, "str") || match(token_type::KEYW, "float") || match(token_type::KEYW, "bool")) {
+        if (match(token_type::KEYW, "var")||match(token_type::KEYW, "const")) {
             auto t = ct.value;
+            bool isc; if(t=="const") isc = true;
             adv(); 
             if (match(token_type::IDEF)) {
                 string name = ct.value;
@@ -224,10 +222,10 @@ public:
                     adv(); 
                     auto expr = parse_expr();
                     consume(token_type::SEMI);
-                    return make_unique<ast::var>(name, move(expr), t);
+                    return make_unique<ast::var>(name, move(expr), isc);
                 }
                 consume(token_type::SEMI);
-                return make_unique<ast::var>(name, unique_ptr<ast::n>(nullptr), t);
+                return make_unique<ast::var>(name, unique_ptr<ast::n>(nullptr), isc);
             }
         }
         else if (match(token_type::IDEF) && match_next(token_type::LPAREN)){
@@ -254,19 +252,15 @@ public:
         adv();
         consume(token_type::LPAREN);
 
-        vector<pair<string,string>> params;
+        vector<string> params;
 
         if (!match(token_type::RPAREN)) {
             do {
-                string type_buf, name_buf;
-                if (!(match(token_type::KEYW, "int") || match(token_type::KEYW, "str") || match(token_type::KEYW, "float") || match(token_type::KEYW, "bool")))
-                    throw ParseError("Expected parameter type.");
-                type_buf = ct.value;
-                adv();
+                string name_buf;
                 if (!match(token_type::IDEF)) throw ParseError("Expected parameter name");
                 name_buf = ct.value;
                 adv();
-                params.emplace_back(type_buf, name_buf);
+                params.emplace_back(name_buf);
                 if (match(token_type::COMMA)) adv();
                 else break;
             } while (true);
@@ -415,7 +409,7 @@ public:
 
     // unary operators: '!' and unary '-'
     unique_ptr<ast::n> parse_unary() {
-        if (match(token_type::LOUD) || (match(token_type::MIN) && /* disambiguate unary minus? */ true)) {
+        if (match(token_type::LOUD) || (match(token_type::MIN))) {
             tok op = ct;
             adv();
             auto right = parse_unary();

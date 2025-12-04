@@ -1,0 +1,3 @@
+var inp = input("Type something and ill say it back: ");
+
+println(inp);

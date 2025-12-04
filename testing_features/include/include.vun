@@ -1,3 +1,4 @@
 
 include("a_lib.vl");
 println(a);
+greet3("vitalij");

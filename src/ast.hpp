@@ -28,8 +28,8 @@ namespace ast {
           children(std::move(children)),
           value(std::move(value)),
           pos(pos) {}
-        virtual const std::vector<std::pair<std::string, std::string>>* get_params() const { return nullptr; }
-        virtual const std::string get_type() const { return type; }
+        virtual const std::vector<std::string>* get_params() const { return nullptr; }
+        virtual const bool is_consta() const { return false; }
         virtual const bool is_str_lit() const { return false; }
         virtual const bool is_int_lit() const { return false; }
         virtual const bool is_bool_lit() const { return false; }
@@ -97,16 +97,16 @@ namespace ast {
     class fn : public n {
     public:
         std::string name;
-        std::vector<std::pair<std::string, std::string>> params;
+        std::vector<std::string> params;
 
         fn(std::string name,
-           std::vector<std::pair<std::string, std::string>> params = {},
+           std::vector<std::string> params = {},
            std::vector<std::unique_ptr<n>> body = {},
            posit p = {})
         : n("function", std::move(body), name, p),
           name(std::move(name)),
           params(std::move(params)) {}
-        const std::vector<std::pair<std::string, std::string>>* get_params() const override {
+        const std::vector<std::string>* get_params() const override {
             return &params;
         }
     };
@@ -163,11 +163,11 @@ namespace ast {
 	// variable
     class var : public n {
     public:
-        std::string type;
-        var(std::string name, std::unique_ptr<n> valueExpr, std::string type, posit p = {})
-        : n("var", make_vector(std::move(valueExpr)), std::move(name), p), type(type)
+        bool is_const;
+        var(std::string name, std::unique_ptr<n> valueExpr, bool is_const_, posit p = {})
+        : n("var", make_vector(std::move(valueExpr)), std::move(name), p), is_const(is_const_)
         {}
-        virtual const std::string get_type() const { return type; }
+        virtual const bool is_consta() const { return is_const; }
     private:
         static std::vector<std::unique_ptr<n>> make_vector(std::unique_ptr<n> value) {
             std::vector<std::unique_ptr<n>> v;

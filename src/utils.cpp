@@ -5,6 +5,7 @@
 #include "err.hpp"
 #include <sstream>
 #include <fstream>
+#include <cmath>
 
 std::string cettcc(const std::string& input) {
     std::string output;
@@ -90,7 +91,7 @@ std::string gfc(const string name, bool debug){
     }
     std::stringstream buffer;
     buffer << file.rdbuf();
-    if(debug) std::cout << "[DEBUG] gfc returned string of size " << buffer.str().size() << "\n";
+    if(debug) std::cout << "[DEBUG] gfc returned string of size " << buffer.str().size() << "\n";  
     return buffer.str();
 }
 void outnode_d(ast::n* node){
@@ -101,4 +102,8 @@ void outnode_d(ast::n* node){
 
 std::vector<ast::n*> make_vec(ast::n* what){
     return {what};
+}
+
+double flmod(double n1, double n2){
+    return std::fmod(n1, n2);
 }

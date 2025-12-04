@@ -50,3 +50,6 @@ std::vector<ast::n*> make_vec(ast::n* what);
 
 // convert escapes to their corresponding characters
 std::string cettcc(const std::string& input);
+
+// fmod wrapper
+double flmod(double n1, double n2);

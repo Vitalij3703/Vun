@@ -1,0 +1,77 @@
+str a = "hello world";
+
+func greet25(str who){
+    println("Hello, "+who);
+}
+func greet24(str who){
+    println("Hello, "+who);
+}
+func greet23(str who){
+    println("Hello, "+who);
+}
+func greet22(str who){
+    println("Hello, "+who);
+}
+func greet21(str who){
+    println("Hello, "+who);
+}
+func greet20(str who){
+    println("Hello, "+who);
+}
+func greet19(str who){
+    println("Hello, "+who);
+}
+func greet18(str who){
+    println("Hello, "+who);
+}
+func greet17(str who){
+    println("Hello, "+who);
+}
+func greet16(str who){
+    println("Hello, "+who);
+}
+func greet15(str who){
+    println("Hello, "+who);
+}
+func greet14(str who){
+    println("Hello, "+who);
+}
+func greet13(str who){
+    println("Hello, "+who);
+}
+func greet12(str who){
+    println("Hello, "+who);
+}
+func greet11(str who){
+    println("Hello, "+who);
+}
+func greet10(str who){
+    println("Hello, "+who);
+}
+func greet9(str who){
+    println("Hello, "+who);
+}
+func greet8(str who){
+    println("Hello, "+who);
+}
+func greet7(str who){
+    println("Hello, "+who);
+}
+func greet6(str who){
+    println("Hello, "+who);
+}
+func greet5(str who){
+    println("Hello, "+who);
+}
+func greet4(str who){
+    println("Hello, "+who);
+}
+func greet3(str who){
+    println("Hello, "+who);
+}
+func greet2(str who){
+    println("Hello, "+who);
+}
+func greet1(str who){
+    println("Hello, "+who);
+}

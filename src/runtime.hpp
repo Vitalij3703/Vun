@@ -15,11 +15,12 @@
 #include <algorithm>
 #include "utils.hpp"
 #include <filesystem>
+#include <utility>
 
 
 
 
-const std::string OPS[4] = {"+", "-", "*", "/"}; // arithmetic operators
+
 
 bool debug = false;
 
@@ -44,7 +45,9 @@ Value apply_arith(const Value& a, const Value& b, char op) {
             case '/':
                 if (bf == 0.0) throw RuntimeError("Division by zero");
                 res = af / bf; break;
-            
+            case '%':
+                if(bf == 0.0) throw RuntimeError("Division by zero");
+                res = flmod(af, bf); break;
             default: throw RuntimeError(std::string("Unknown binary operator: ") + op);
         }
         return Value(res);
@@ -58,8 +61,6 @@ Value apply_arith(const Value& a, const Value& b, char op) {
             case '/':
                 if (bi == 0) throw RuntimeError("Division by zero");
                 return Value(ai / bi);
-            case '%':
-                return Value(ai%bi);
             default: throw RuntimeError(std::string("Unknown binary operator: ") + op);
         }
     }
@@ -185,7 +186,7 @@ class runtime {
 public:
     std::vector<std::unique_ptr<ast::n>> nodesl;                         // stores nodes
     std::vector<std::unique_ptr<ast::n>> global_nodes;                   // stores whatever, if it works it works
-    std::unordered_map<std::string, Value> vars;                         // stores variables
+    std::unordered_map<std::string, std::pair<Value, bool>> vars;        // stores variables (name, value, is const)
     std::unordered_map<std::string, ast::fn*> functions;                 // stores functions
     std::string strbuf = "";                                             // stores the strbuf
     std::string fnamee;
@@ -198,9 +199,9 @@ public:
         nodesl = p.parse();
         if (debug) std::cout << "[DEBUG] parsed nodes count: " << nodesl.size() << "\n";
 
-        if (debug){
+        /*if (debug){
             for(auto& node : nodesl) outnode_d(node.get());
-        }
+        }*/
 
         if(!nodesl.empty()){
             auto top_ret = run(nodesl, false);
@@ -272,10 +273,10 @@ public:
     if (node->type == "ref") {
         auto it = vars.find(node->value);
         if (it == vars.end()) throw RuntimeError("Unknown variable: " + node->value);
-        if(it->second.tag == ValType::VOID){
+        if(it->second.first.tag == ValType::VOID){
             throw RuntimeError("Variable '"+node->value+"' doesnt have a value yet it got referenced");
         }
-        return it->second;
+        return it->second.first;
     }
 
     if (node->type == "call") {
@@ -284,18 +285,35 @@ public:
 
         const std::string call_name = node->value;
         if(debug) std::cout<<"[DEBUG] tryna call function called "+call_name+"\n";
+        if(call_name == "input"){
+            if(1==arg_vals.size()){
+                std::cout<<arg_vals[0].to_string();
+            }
+            std::string out;
+            cin>>out;
+            return Value(out);
+        }
+        if(call_name == "type_of"){
+            Value arg1;
+            if(1==arg_vals.size()) arg1 = arg_vals[0]; else{throw RuntimeError("type_of() excepts 1 parameter");}
+            if(arg1.is_int()) return Value("int");
+            if(arg1.is_str()) return Value("str");
+            if(arg1.is_float()) return Value("float");
+            if(arg1.is_bool()) return Value("bool");
+            return Value("nul");
+        }
         if (call_name == "isset") {
             if (node->children.size() < 1) throw RuntimeError("isset expects 1 argument");
             ast::n* first_child = node->children[0].get();
             if (first_child->type == "ref") {
                 const std::string& name = first_child->value;
-                return vars.find(name) != vars.end();
+                return Value(vars.find(name) != vars.end());
             } else if (!arg_vals.empty()) {
                 if (arg_vals[0].is_str()) {
-                    return vars.find(arg_vals[0].as_str()) != vars.end();
+                    return Value(vars.find(arg_vals[0].as_str()) != vars.end());
                 }
             }
-            return false;
+            return Value(false);
         }
         auto it_fn = functions.find(call_name);
         if (it_fn != functions.end()) {
@@ -309,8 +327,8 @@ public:
             auto old_functions = functions;
 
             for (size_t i = 0; i < params.size(); ++i) {
-                const std::string& param_name = params[i].second;
-                vars.insert_or_assign(param_name, arg_vals[i]);
+                const std::string& param_name = params[i];
+                vars.insert_or_assign(param_name, std::pair<Value, bool>(arg_vals[i], true));
             }
 
             auto ret = run(fn_node->children,false);
@@ -347,10 +365,11 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes, bool inc) 
 
         if (node->type == "var") {
             std::string varname = node->value;
+            if(vars.find(varname) != vars.end() && vars.find(varname)->second.second) throw RuntimeError("Constant variable ('"+varname+"') cannot be changed");
             if (!node->children.empty() && node->children[0]) {
-                Value assigned = evaluateExpression(node->children[0].get());
+                std::pair assigned = std::pair<Value, bool>(evaluateExpression(node->children[0].get()), node->is_consta());
                 vars.insert_or_assign(varname, assigned);
-                if (debug) std::cout << "[DEBUG] assigned var '" << varname << "' = " << assigned.to_string() << "\n";
+                if (debug) std::cout << "[DEBUG] assigned var '" << varname << "' = " << assigned.first.to_string() << "\n";
             }
             continue;
         }
@@ -423,11 +442,7 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes, bool inc) 
             if (call_name == "include"){
                 auto what = evaluateExpression(node->children[0].get()).to_string();
                 std::string wha = what;
-                if(what.starts_with("std.")){
-                    std::filesystem::path p = std::filesystem::absolute(__FILE__).parent_path().parent_path()/"std"/what;
-                    wha = gfc(p.string(), debug);
-                }
-                else {wha = gfc(what, debug);}
+                wha = gfc(what, debug);
                 auto a = parser(wha, debug).parse();
                 run(a, true);
                 continue;
@@ -462,6 +477,7 @@ std::optional<Value> run(std::vector<std::unique_ptr<ast::n>>& nodes, bool inc) 
                 }
             continue;
         }
+        std::cout<<evaluateExpression(node).to_string()<<"\n";
     }
 
     return std::nullopt;

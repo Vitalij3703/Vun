@@ -2,3 +2,8 @@ var hello = "hello world";
 println(hello);
 const world = "yo";
 println(world);
+
+func do_something(a, b){
+    return a + b;
+}
+println(do_something(1, 2));
